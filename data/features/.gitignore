@@ -1,0 +1,5 @@
+# 변수 파일은 DVC가 관리 → 깃에는 .dvc 포인터만 올라감
+/*
+!/.gitignore
+!/README.md
+!/*.dvc
