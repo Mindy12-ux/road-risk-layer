@@ -67,7 +67,7 @@ data/
    - 줄 앞에 `(.venv)`가 보이면 활성화된 것. **터미널을 새로 열 때마다 Activate 줄을 다시 실행**하세요.
    - "스크립트를 실행할 수 없습니다" 오류 → `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` 한 번 실행 후 다시.
    - VS Code: 오른쪽 아래 Python 버전을 눌러 `.venv` 선택하면 터미널이 자동 활성화됩니다.
-   - 아나콘다를 쓰면 conda 환경 안에서 같은 `pip install` 해도 됩니다. 가상환경 없이 설치해도 동작은 합니다.
+   - 아나콘다를 쓰면 conda 환경 안에서 같은 `pip install` 해도 됩니다. 이때 `conda env config vars set PYTHONUTF8=1` 도 한 번 해 두면 한글 경로·파일 오류를 막을 수 있습니다 (실행 후 `conda activate 환경이름` 다시). 가상환경 없이 설치해도 동작은 합니다.
 5. 확인
    ```
    dvc --version
@@ -265,6 +265,7 @@ dvc checkout data/features/speed.csv.dvc             # 실제 파일도 그 버�
 | `dvc pull` 에서 `missing cache files` / `failed to pull` | ① 올린 사람이 `dvc push`를 안 함 ② 올린 사람 PC의 구글 드라이브 동기화가 아직 안 끝남 ③ 내 PC의 드라이브 앱이 꺼져 있음. 올린 사람에게 확인 |
 | `config file error` / `url` 관련 오류 | 창고 경로가 설정 안 됨 → `python scripts/set_storage.py` |
 | `dvc remote modify --local …` 에서 `'ascii' codec can't encode` | DVC가 한글 경로를 설정 파일에 못 씀 → 그 명령 대신 `python scripts/set_storage.py "경로"` 사용 |
+| `config file error: 'cp949' codec can't decode` | 설정 파일의 한글 경로를 못 읽음. `conda env config vars set PYTHONUTF8=1` → `conda activate 환경이름` (venv는 `setx PYTHONUTF8 1` 후 터미널 다시 열기) → `python scripts/set_storage.py` 다시 실행 |
 | `set_storage.py` 가 폴더를 못 찾음 | 공유 폴더를 "내 드라이브에 바로가기 추가" 안 함, 또는 드라이브 앱 로그인 안 됨 |
 | `git push` 가 `rejected` | 다른 사람이 먼저 올림 → `git pull` 후 다시 `git push` |
 | `git pull` 에서 `.dvc` 파일 충돌 | 두 사람이 **같은 변수 파일**을 동시에 고침. 담당자 한 명만 고치기로 정하고, 담당자 버전으로 `git checkout --theirs 파일.dvc` 등 정리 (모르겠으면 팀장에게) |
