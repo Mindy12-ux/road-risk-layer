@@ -89,6 +89,9 @@ data/
 ```
 git clone https://github.com/mindy12-ux/road-risk-layer.git
 cd road-risk-layer
+```
+여기서 1장 4번(가상환경 + 패키지 설치)을 하고, 이어서
+```
 python scripts/set_storage.py
 ```
 `설정 완료: 데이터 창고 = G:/내 드라이브/road-risk-dvc` 처럼 나오면 됩니다.
@@ -146,6 +149,9 @@ dvc push
    ```
    git clone https://github.com/mindy12-ux/road-risk-layer.git
    cd road-risk-layer
+   ```
+   1장 4번(가상환경 + 패키지 설치)을 한 뒤
+   ```
    python scripts/set_storage.py
    dvc pull
    ```
