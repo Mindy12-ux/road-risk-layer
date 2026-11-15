@@ -57,10 +57,17 @@ data/
 2. **Python 3.10 이상** 설치 (Windows는 설치 첫 화면에서 **"Add python.exe to PATH" 체크**)
 3. **구글 드라이브 데스크톱 앱** 설치: https://www.google.com/drive/download/ → 구글 계정으로 로그인
    - 설치하면 Windows는 탐색기에 `G:` 드라이브(또는 다른 글자)가 생기고 그 안에 `내 드라이브`가 보입니다.
-4. 패키지 설치 (PowerShell/터미널에서)
+4. 패키지 설치 — 가상환경 안에서 하는 걸 추천 (다른 프로젝트와 버전이 안 꼬임)
+   저장소를 clone 한 뒤(2-2, 3장) 저장소 폴더에서:
    ```
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1          # Mac: source .venv/bin/activate
    pip install dvc pandas pyarrow
    ```
+   - 줄 앞에 `(.venv)`가 보이면 활성화된 것. **터미널을 새로 열 때마다 Activate 줄을 다시 실행**하세요.
+   - "스크립트를 실행할 수 없습니다" 오류 → `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` 한 번 실행 후 다시.
+   - VS Code: 오른쪽 아래 Python 버전을 눌러 `.venv` 선택하면 터미널이 자동 활성화됩니다.
+   - 아나콘다를 쓰면 conda 환경 안에서 같은 `pip install` 해도 됩니다. 가상환경 없이 설치해도 동작은 합니다.
 5. 확인
    ```
    dvc --version
