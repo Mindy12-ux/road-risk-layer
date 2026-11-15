@@ -1,0 +1,5 @@
+outs:
+- md5: f449f8a6b2617db392d9d6437dc0f051
+  size: 2352341
+  hash: md5
+  path: sun.csv
