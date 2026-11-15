@@ -9,6 +9,7 @@
 ※ 'dvc remote modify --local' 명령은 경로에 한글이 있으면 오류가 나서 이 스크립트를 쓴다.
 """
 import glob
+import locale
 import os
 import string
 import sys
@@ -51,7 +52,10 @@ def main():
     if not os.path.isdir(path):
         sys.exit(f"[오류] 폴더가 없습니다: {path}")
     cfg = ROOT / ".dvc" / "config.local"
-    cfg.write_text(f"['remote \"{REMOTE}\"']\n    url = \"{path}\"\n", encoding="utf-8")
+    # DVC는 설정 파일을 시스템 기본 인코딩으로 읽는다 (한국어 Windows = cp949, PYTHONUTF8=1 이면 utf-8).
+    # 그래서 같은 인코딩으로 써야 한글 경로("내 드라이브")가 안 깨진다.
+    enc = locale.getpreferredencoding(False)
+    cfg.write_text(f"['remote \"{REMOTE}\"']\n    url = \"{path}\"\n", encoding=enc)
     print(f"설정 완료: 데이터 창고 = {path}")
     print("이제 'dvc pull' (받기) / 'dvc push' (올리기) 를 쓸 수 있습니다.")
 
