@@ -1,0 +1,5 @@
+[core]
+    autostage = true
+    remote = gdrive
+['remote "gdrive"']
+    url = ../SET_ME/road-risk-dvc
