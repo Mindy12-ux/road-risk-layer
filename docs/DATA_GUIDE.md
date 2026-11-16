@@ -179,6 +179,18 @@ python scripts/merge.py sun --out data/merged_sun    # 결과 폴더 이름 바�
 - 그래서 기존 학습 코드에서 읽는 파일 경로만 `data/merged/train.csv`로 바꾸면 됩니다.
 - 붙인 변수 중 빈 값이 있으면 비율을 알려 줍니다. (예: 생활인구 데이터가 없는 달)
 
+### 상관관계 보고 모델 학습하기
+처음 한 번만 `pip install lightgbm scikit-learn scipy matplotlib`
+```
+python scripts/merge.py sun zone road_link road_speed pop --keep-keys   # ① 변수 붙이기 (--keep-keys 꼭)
+python scripts/make_model_data.py                                       # ② 학습용 데이터 → data/model/
+python model/check_correlation.py                                       # ③ 상관관계 → results/corr/
+python model/train_two_stage.py                                         # ④ 모델 학습 → results/model/
+```
+- ②는 dataset_v2와 같은 규칙으로 바꿉니다: 사고 행 날씨·노면을 무사고 파일 기준으로 통일, 위도·경도·연도 제거, 2021~23 train / 2024 valid / 2025 test (2020 제외), 라벨 `사고심각도`(0~3).
+- ③에서 `|r| ≥ 0.8`인 변수 쌍이 나오면 둘 중 하나를 빼고 학습해 보세요: `python model/train_two_stage.py --drop 일출까지분 실제밤`
+- 팀원 변수 효과 비교: `python model/train_two_stage.py --only-base --out results/model_base` (원래 16개 변수만) 결과의 `metrics.json`과 비교
+
 ---
 
 ## 5. 내 변수 추가하기 (팀원이 제일 많이 할 일)
