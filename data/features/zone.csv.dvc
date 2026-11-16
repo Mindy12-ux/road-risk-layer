@@ -1,0 +1,5 @@
+outs:
+- md5: 4a668062b838f6887945c4e9a2a0cdf5
+  size: 38297
+  hash: md5
+  path: zone.csv
