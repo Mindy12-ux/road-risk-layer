@@ -1,0 +1,5 @@
+outs:
+- md5: 03d5d97e0ca69edee1781b3ef1604acd
+  size: 29715
+  hash: md5
+  path: camera.csv
