@@ -4,3 +4,6 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 .DS_Store
+
+# API 키 (GitHub에 올리지 않기)
+.env
