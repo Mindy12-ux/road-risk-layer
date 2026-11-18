@@ -6,7 +6,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/multi/VIF.py
 
-입력: data/model_input/train.csv, info.json   (train만 사용)
+입력: model/results/model_input/train.csv, info.json   (train만 사용)
 출력: reports/multi_VIF/
         VIF_결과.csv                  정리 전 / 정리 후 VIF
         01_VIF_전체.png               43칸 전체 VIF
@@ -29,11 +29,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/multi_VIF"
 os.makedirs(OUT_DIR, exist_ok=True)
 

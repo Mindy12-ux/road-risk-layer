@@ -8,7 +8,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/target_sc/V.py
 
-입력: data/model_input/train.csv, info.json   (train만 사용)
+입력: model/results/model_input/train.csv, info.json   (train만 사용)
 출력: reports/target_V/
         크라메르V_결과.csv
         01_크라메르V_막대.png        변수별 V
@@ -31,11 +31,12 @@ import numpy as np
 import pandas as pd
 from scipy.stats import chi2_contingency
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/target_V"
 os.makedirs(OUT_DIR, exist_ok=True)
 

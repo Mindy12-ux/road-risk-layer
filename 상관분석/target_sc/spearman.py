@@ -6,7 +6,7 @@
 사용법 (ML project 폴더에서):
     python analysis/target_sc/01_spearman.py
 
-입력: data/model_input/train.csv, info.json   (train만 사용 → valid·test는 건드리지 않음)
+입력: model/results/model_input/train.csv, info.json   (train만 사용 → valid·test는 건드리지 않음)
 출력: reports/target_anal_re/spearman/
         스피어만_결과.csv
         01_스피어만_막대.png         변수별 관계 크기 (정렬)
@@ -24,11 +24,12 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/target_anal_re/spearman"
 os.makedirs(OUT_DIR, exist_ok=True)
 
