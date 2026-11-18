@@ -25,12 +25,15 @@ API (화면이 부르는 주소)
   GET /api/cell?lat=&lng=&when=&weather=&road=   클릭한 칸의 등급·이유
   GET /api/routes?o=경도,위도&d=경도,위도&when=&weather=&road=   경로 3개 + 등급
   GET /api/search?q=강남역             장소 검색 (카카오 로컬)
+  GET /performance                    모델 성능 페이지 (① 고정 성능 ② 실시간 상태 ③ 나중에 채점)
+  GET /api/performance/live           ② 실시간 상태 (등급 비율, 데이터 출처, 입력 드리프트, 응답 시간)
 경로마다 '카메라' 목록도 붙음: 경로 선 25m 안의 단속카메라 (web/data/cameras_seoul.csv,
   공공데이터포털 전국무인교통단속카메라표준데이터 서울 4,491대: 과속·신호·구간단속·주정차)
 경로마다 '보호구역' 목록도 붙음: 경로가 시설 200m 안을 지나는 어린이보호구역 (web/data/child_zones_seoul.csv,
   공공데이터포털 전국어린이보호구역표준데이터 서울 1,601곳)
 """
 import datetime as dt
+import json
 import os
 import sys
 import threading
@@ -346,6 +349,7 @@ def city_predict(when, weather, road, now):
         hit = _cache.get(key)
         if hit and time.time() - hit[0] < 300:          # 5분 (화면이 5분마다 새로 받음)
             return hit[1]
+    t0 = time.time()
     ratio = sn.ratios() if now else None
     X = fm.make(when=None if now else when, weather=weather, road_state=None if now else road, speed_ratio=ratio)
     pred = dict(zip(X["grid_id"], rm.predict(X)))
@@ -353,12 +357,104 @@ def city_predict(when, weather, road, now):
             "속도_출처": f"실시간 속도 ({sn.last})" if now else f"막힘 정도 직접 선택: {road}"}
     with _lock:
         _cache[key] = (time.time(), (pred, meta))
+    if now and weather is None:                          # 실시간 기본 조건일 때만 성능 페이지 상태로 기록
+        record_live(hour, pred, ratio, time.time() - t0, fm.weather_source)
     return pred, meta
+
+
+# ---------------------------------------------------------------- 모델 성능 페이지 (/performance)
+# ① 고정 성능   web/data/performance_static.json  (python model/make_performance.py 로 만듦)
+# ② 실시간 상태 GET /api/performance/live           (실시간 예측을 돌릴 때마다 아래 _live 에 기록)
+# ③ 나중에 채점 web/data/performance_delayed.json + 매시 예측 저장 web/data/predictions/YYYY-MM-DD.csv
+PERF_DIR = os.path.join(ROOT, "web", "data")
+PRED_DIR = os.path.join(PERF_DIR, "predictions")
+TRAIN_RATIO_MEDIAN = 0.97          # 학습 데이터 칸_직전1시간_속도비율 중앙값 (드리프트 비교 기준)
+DRIFT_WARN, DRIFT_BAD = 0.05, 0.15  # 중앙값 차이가 이만큼 넘으면 주의 / 경고
+MODEL_VERSION = str(rm.info.get("학습_날짜", "unknown"))
+_live = {"updated_at": None, "latency_sec": None, "ratio_median": None, "weather": None,
+         "speed": {}, "share": {}, "history": {}, "saved": set()}
+
+
+def record_live(hour, pred, ratio, latency, weather_src):
+    grades = pd.Series([p["등급"] for p in pred.values()])
+    share = grades.value_counts(normalize=True).reindex(["높음", "보통", "낮음"], fill_value=0).round(4).to_dict()
+    with _lock:
+        _live.update(updated_at=dt.datetime.now().isoformat(timespec="minutes"), latency_sec=round(latency, 1),
+                     ratio_median=round(float(np.median(list(ratio.values()))), 3) if ratio else None,
+                     weather=weather_src, speed=dict(sn.last), share=share)
+        _live["history"][str(hour)] = share["높음"]
+        for k in sorted(_live["history"])[:-24]:         # 최근 24시간만
+            del _live["history"][k]
+    try:
+        save_prediction(hour, pred)
+    except OSError as e:                                  # 저장 실패해도 화면은 계속
+        print(f"예측 저장 실패: {e}")
+
+
+def save_prediction(hour, pred):
+    """③ 나중에 채점용: 시각마다 서울 전체 칸의 점수·등급을 하루 1파일에 한 번씩 덧붙임"""
+    stamp = f"{hour:%Y-%m-%d %H:%M}"
+    if stamp in _live["saved"]:
+        return
+    os.makedirs(PRED_DIR, exist_ok=True)
+    path = os.path.join(PRED_DIR, f"{hour:%Y-%m-%d}.csv")
+    if os.path.exists(path) and stamp in set(pd.read_csv(path, usecols=["datetime"], encoding="utf-8-sig")["datetime"]):
+        _live["saved"].add(stamp)                          # 서버를 다시 켰을 때 같은 시각을 두 번 저장하지 않게
+        return
+    df = pd.DataFrame({"datetime": stamp, "grid_id": list(pred),
+                       "score": [round(float(p["위험점수"]), 5) for p in pred.values()],
+                       "grade": [p["등급"] for p in pred.values()], "model_version": MODEL_VERSION})
+    df.to_csv(path, mode="a", header=not os.path.exists(path), index=False, encoding="utf-8-sig")
+    _live["saved"].add(stamp)
+
+
+def read_perf(name):
+    path = os.path.join(PERF_DIR, name)
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def drift_status(gap):
+    return "bad" if gap >= DRIFT_BAD else "warn" if gap >= DRIFT_WARN else "ok"
 
 
 @app.route("/")
 def index():
     return render_template("index.html", kakao_js_key=KAKAO_JS, notice=NOTICE)
+
+
+@app.route("/performance")
+def performance():
+    return render_template("performance.html", static=read_perf("performance_static.json"),
+                           delayed=read_perf("performance_delayed.json"))
+
+
+@app.route("/api/performance/static")
+def performance_static():
+    return jsonify(read_perf("performance_static.json") or {})
+
+
+@app.route("/api/performance/live")
+def performance_live():
+    city_predict(None, None, None, True)                  # 5분 안에 이미 돌렸으면 저장값 사용
+    with _lock:
+        live = {k: v for k, v in _live.items() if k != "saved"}
+        live["history"] = dict(live["history"])
+    sp = live.pop("speed") or {}
+    weather = live.pop("weather")
+    drift = []
+    if live["ratio_median"] is not None:
+        drift.append({"feature": "칸_직전1시간_속도비율", "stat": "중앙값", "live": live["ratio_median"],
+                      "train": TRAIN_RATIO_MEDIAN,
+                      "status": drift_status(abs(live["ratio_median"] - TRAIN_RATIO_MEDIAN))})
+    days = sorted(f[:-4] for f in os.listdir(PRED_DIR) if f.endswith(".csv")) if os.path.isdir(PRED_DIR) else []
+    return jsonify({**live, "n_cells": len(CELLS), "model_version": MODEL_VERSION,
+                    "sources": {"weather": {"name": weather, "ok": str(weather).startswith("Open-Meteo")},
+                                "speed": {k: sp.get(k) for k in ["구간", "도로명", "없음", "부른_구간",
+                                                                  "속도_못받은_구간", "걸린_초"]}},
+                    "drift": drift, "saved_days": len(days), "first_day": days[0] if days else None})
 
 
 @app.route("/api/grid")

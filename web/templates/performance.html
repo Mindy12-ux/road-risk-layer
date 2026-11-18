@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모델 성능 · 서울 사고위험 길안내</title>
+<style>
+  :root { --red:#e53935; --yellow:#f9a825; --gray:#90a4ae; --green:#2e7d32; --ink:#1f2933; --sub:#6b7785;
+          --line:#e3e8ee; --bg:#f6f8fa; --blue:#1a73e8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--ink); color:#fff; padding:14px 24px; display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  header b { font-size:17px; } header a { color:#fff; opacity:.65; text-decoration:none; font-size:14px; }
+  header a.on { opacity:1; border-bottom:2px solid #fff; padding-bottom:3px; }
+  nav.tabs { display:flex; gap:6px; padding:16px 24px 0; max-width:1240px; margin:0 auto; flex-wrap:wrap; }
+  nav.tabs a { padding:8px 14px; border-radius:8px; background:#e9edf2; color:var(--sub); font-size:13px; text-decoration:none; }
+  main { padding:12px 24px 40px; max-width:1240px; margin:0 auto; }
+  section { background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px 24px; margin-bottom:22px; }
+  h2 { margin:0 0 4px; font-size:19px; } h3 { margin:0 0 12px; font-size:14px; }
+  .desc { color:var(--sub); margin:0 0 18px; font-size:13px; line-height:1.6; }
+  .pill { display:inline-block; font-size:11px; padding:3px 9px; border-radius:99px; margin-left:6px; vertical-align:middle; font-weight:normal; }
+  .p-fix { background:#e8f0fe; color:var(--blue); } .p-live { background:#e8f5e9; color:var(--green); } .p-wait { background:#fff4e0; color:#a15c00; }
+  .grid { display:grid; gap:14px; }
+  .g4 { grid-template-columns:repeat(4,1fr); } .g2 { grid-template-columns:1fr 1fr; } .g3 { grid-template-columns:repeat(3,1fr); }
+  @media (max-width:900px) { .g4 { grid-template-columns:1fr 1fr; } .g2, .g3 { grid-template-columns:1fr; } }
+  @media (max-width:600px) { main, nav.tabs { padding-left:12px; padding-right:12px; } section { padding:16px 14px; } .g4 { grid-template-columns:1fr; } }
+  .kpi, .box { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .kpi .l { font-size:12px; color:var(--sub); } .kpi .v { font-size:28px; font-weight:bold; margin:4px 0; }
+  .kpi .n { font-size:12px; color:var(--sub); line-height:1.5; }
+  .bars { display:flex; align-items:flex-end; gap:8px; height:160px; border-bottom:1px solid var(--line); padding-top:20px; }
+  .bar { flex:1; background:#c5d6f5; border-radius:4px 4px 0 0; position:relative; min-height:2px; }
+  .bar.top { background:var(--red); }
+  .bar span { position:absolute; top:-17px; left:-4px; right:-4px; text-align:center; font-size:10px; color:var(--sub); }
+  .xl { display:flex; justify-content:space-between; font-size:11px; color:var(--sub); padding-top:4px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  td, th { padding:7px 4px; border-bottom:1px solid var(--line); text-align:left; } th { color:var(--sub); font-weight:normal; }
+  .note { background:#f7f9fb; border-left:3px solid var(--blue); padding:9px 12px; font-size:12.5px; line-height:1.6; margin-top:14px; }
+  .note.warn { border-color:var(--yellow); background:#fffaf0; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:1px; }
+  .d-높음, .d-bad { background:var(--red); } .d-보통, .d-warn { background:var(--yellow); } .d-낮음 { background:var(--gray); } .d-ok { background:var(--green); }
+  .stack { display:flex; height:30px; border-radius:7px; overflow:hidden; font-size:12px; color:#fff; font-weight:bold; background:var(--line); }
+  .stack div { display:flex; align-items:center; justify-content:center; white-space:nowrap; overflow:hidden; }
+  .empty { color:var(--sub); font-size:13px; padding:18px 0; text-align:center; }
+  .tl { display:flex; margin:4px 0; }
+  .st { flex:1; text-align:center; position:relative; font-size:12.5px; padding:0 4px; }
+  .st:before { content:''; position:absolute; top:12px; left:-50%; right:50%; height:3px; background:var(--line); }
+  .st:first-child:before { display:none; } .st.done:before { background:var(--blue); }
+  .st .c { width:26px; height:26px; border-radius:50%; background:var(--line); margin:0 auto 6px; position:relative; z-index:1;
+           color:#fff; font-weight:bold; font-size:12px; line-height:26px; }
+  .st.done .c { background:var(--blue); } .st.now .c { background:var(--yellow); }
+  .st small { color:var(--sub); display:block; margin-top:2px; }
+  .ph { border:2px dashed #cfd6de; border-radius:10px; padding:14px; text-align:center; color:var(--sub); font-size:13px; }
+  .ph .v { font-size:28px; font-weight:bold; color:#9aa5b1; margin:4px 0; } .ph.done .v { color:var(--ink); }
+  .muted { color:var(--sub); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <b>🚗 서울 사고위험 길안내</b>
+  <a href="/">지도 · 길안내</a>
+  <a href="/performance" class="on">모델 성능</a>
+</header>
+<nav class="tabs"><a href="#fixed">① 검증된 성능</a><a href="#live">② 실시간 상태</a><a href="#later">③ 나중에 채점</a></nav>
+<main>
+
+<!-- ① 검증된 성능 ------------------------------------------------------------>
+<section id="fixed">
+  <h2>① 검증된 성능 <span class="pill p-fix">고정 · 2025년 test 기준</span></h2>
+  <p class="desc" id="fixedDesc"></p>
+  <div id="fixedBody"></div>
+</section>
+
+<!-- ② 실시간 상태 ------------------------------------------------------------>
+<section id="live">
+  <h2>② 실시간 상태 <span class="pill p-live" id="livePill">불러오는 중…</span></h2>
+  <p class="desc">지금은 정답(실제 사고)이 없어서 '맞혔는지'는 보여줄 수 없어요. 대신 예측이 정상적으로 돌고 있는지를 보여줘요.
+    처음 열 때는 서울 전체 실시간 속도를 받느라 20~30초 걸릴 수 있어요.</p>
+  <div class="grid g2">
+    <div class="box">
+      <h3>지금 서울 칸들의 등급 비율 <span class="muted" id="nCells"></span></h3>
+      <div class="stack" id="shareBar"></div>
+      <div class="muted" style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap">
+        <span><span class="dot d-높음"></span>높음</span><span><span class="dot d-보통"></span>보통</span><span><span class="dot d-낮음"></span>낮음</span>
+        <span style="margin-left:auto">설계 기준: 높음 10% · 보통 20% · 낮음 70%</span>
+      </div>
+      <h3 style="margin-top:20px">데이터 출처 상태</h3>
+      <table id="srcTable"><tr><td class="empty">불러오는 중…</td></tr></table>
+    </div>
+    <div class="box">
+      <h3>입력값이 학습 때와 얼마나 다른가 (입력 드리프트)</h3>
+      <table id="driftTable"><tr><td class="empty">불러오는 중…</td></tr></table>
+      <div class="note warn">실시간 속도비율이 학습 때보다 낮게 들어오면 '주의'로 표시돼요. 실시간 API와 학습용 속도 자료의 계산 방식 차이일 수 있어서
+        <b>보정할지 검토 중</b>이에요.</div>
+      <h3 style="margin-top:18px">최근 '높음' 등급 비율 (이 서버가 켜진 뒤, 최대 24시간)</h3>
+      <div id="history"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ③ 나중에 채점 ------------------------------------------------------------>
+<section id="later">
+  <h2>③ 나중에 채점 <span class="pill p-wait" id="laterPill"></span></h2>
+  <p class="desc">TAAS 사고 데이터는 1년에 한 번(다음 해 5월쯤) 공개돼요. 그래서 매시 예측을 저장해 두었다가, 정답이 나오면 한꺼번에 채점해요.</p>
+  <div class="tl" id="timeline"></div>
+  <div class="grid g3" style="margin-top:20px" id="laterCards"></div>
+  <div class="note" id="laterHow"></div>
+</section>
+</main>
+
+<script>
+const STATIC = {{ static | tojson }};
+const DELAYED = {{ delayed | tojson }};
+const COLOR = {"높음": "red", "보통": "yellow", "낮음": "gray"};
+const pct = (v, d = 1) => v == null ? "—" : (v * 100).toFixed(d) + "%";
+const num = (v, d = 3) => v == null ? "—" : Number(v).toFixed(d);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ① 고정 성능 ---------------------------------------------------------------
+function renderFixed() {
+  const el = document.getElementById("fixedBody");
+  if (!STATIC) { el.innerHTML = '<div class="empty">web/data/performance_static.json 이 없어요 → python model/make_performance.py</div>'; return; }
+  const m = STATIC.model, k = STATIC.metrics, s = STATIC.service_check || {};
+  const high = STATIC.grades.find(g => g.grade === "높음") || {};
+  document.getElementById("fixedDesc").textContent =
+    `${m.name} (변수 ${m.n_features}개) · ${m.train_years} 데이터로 학습하고, 한 번도 안 본 ${m.test_year}년 데이터로 채점한 결과예요.`;
+  let html = `<div class="grid g4">
+    <div class="kpi"><div class="l">ROC-AUC</div><div class="v">${num(k.roc_auc)}</div>
+      <div class="n">무작위로 찍으면 0.5<br>사고 난 칸·시각을 더 위험하게 줄 세우는 능력</div></div>
+    <div class="kpi"><div class="l">PR-AUC</div><div class="v">${num(k.pr_auc)}</div>
+      <div class="n">무작위 기준 ≈ ${num(k.pr_auc_baseline, 2)}<br>(사고 1건당 비사고 3건으로 표본을 만듦)</div></div>
+    <div class="kpi"><div class="l">'높음' 등급의 실제 사고 비율</div><div class="v" style="color:var(--red)">${pct(high.accident_rate)}</div>
+      <div class="n">전체 평균 ${pct(k.pr_auc_baseline)}의 <b>${high.lift ? high.lift.toFixed(1) + "배" : "—"}</b><br>높음 등급 = 전체의 ${pct(high.row_share)}</div></div>
+    <div class="kpi"><div class="l">서비스 방식으로 다시 계산 (PR-AUC)</div><div class="v" style="font-size:22px">${num(s.pr_auc_before)} → ${num(s.pr_auc_after)}</div>
+      <div class="n">칸 + 시각만으로 변수를 다시 만들어도 거의 그대로<br>(ROC-AUC ${num(s.roc_auc_before)} → ${num(s.roc_auc_after)})</div></div>
+  </div><div class="grid g2" style="margin-top:14px">`;
+
+  if (STATIC.deciles && STATIC.deciles.length) {
+    const mx = Math.max(...STATIC.deciles);
+    html += `<div class="box"><h3>위험 점수 10구간별 실제 사고 비율</h3><div class="bars">` +
+      STATIC.deciles.map((v, i) => `<div class="bar ${i === 9 ? "top" : ""}" style="height:${v / mx * 100}%"><span>${pct(v, 0)}</span></div>`).join("") +
+      `</div><div class="xl"><span>점수 하위 10%</span><span>상위 10%</span></div></div>`;
+  } else {
+    html += `<div class="box"><h3>위험 점수 10구간별 실제 사고 비율</h3>
+      <div class="empty">아직 값이 없어요<br><small>python model/make_performance.py 를 돌리면 채워져요</small></div></div>`;
+  }
+  html += `<div class="box"><h3>위험 등급 기준 (2024 valid에서 정하고 고정)</h3><table>
+    <tr><th>등급</th><th>점수 순위</th><th>줄 비율</th><th>실제 사고 비율</th><th>평균 대비</th></tr>` +
+    STATIC.grades.map(g => `<tr><td><span class="dot d-${g.grade}"></span>${g.grade}</td><td>${g.rank_range}</td>
+      <td>${pct(g.row_share)}</td><td><b>${pct(g.accident_rate)}</b></td><td>${g.lift ? g.lift.toFixed(2) + "배" : "—"}</td></tr>`).join("") +
+    `</table><div class="note"><b>읽는 법</b> · 점수는 '진짜 사고 확률'이 아니라 <b>상대적인 위험 순위</b>예요. 학습 때 비사고 데이터를 사고 1건당 3건만 넣었기 때문이에요.` +
+    (STATIC.fatal_capture_high_mid != null ? `<br><b>한계</b> · 사망사고는 높음+보통 등급에 ${pct(STATIC.fatal_capture_high_mid, 0)}만 잡혀요.` : "") +
+    `</div></div></div>`;
+  if (STATIC.notes && STATIC.notes.placeholder)
+    html += `<div class="note warn">${esc(STATIC.notes.placeholder_text)}</div>`;
+  el.innerHTML = html;
+}
+
+// ② 실시간 상태 ---------------------------------------------------------------
+async function loadLive() {
+  const pill = document.getElementById("livePill");
+  try {
+    const r = await fetch("/api/performance/live");
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    pill.textContent = "● 5분마다 갱신 · " + (d.updated_at || "").replace("T", " ");
+    document.getElementById("nCells").textContent = `(${d.n_cells.toLocaleString()}칸)`;
+    const sh = d.share || {};
+    document.getElementById("shareBar").innerHTML = ["높음", "보통", "낮음"].map(g =>
+      `<div style="width:${(sh[g] || 0) * 100}%;background:var(--${COLOR[g]})">${pct(sh[g])}</div>`).join("");
+
+    const sp = d.sources.speed, w = d.sources.weather;
+    const got = (sp["구간"] || 0) + (sp["도로명"] || 0), all = got + (sp["없음"] || 0);
+    const failLinks = sp["속도_못받은_구간"] || 0;
+    const rows = [
+      [w.ok ? "ok" : "warn", "날씨", esc(w.name || "—")],
+      [all && got / all > 0.95 ? "ok" : "warn", "속도를 받은 칸 (서울시 실시간)",
+        all ? `${got.toLocaleString()} / ${all.toLocaleString()}칸 (${pct(got / all)})` : "—"],
+      [failLinks ? "warn" : "ok", "속도를 못 받은 도로 구간",
+        `${failLinks.toLocaleString()} / ${(sp["부른_구간"] || 0).toLocaleString()}구간 → 평소 속도(1.0)로 대체`],
+      [d.latency_sec != null && d.latency_sec < 5 ? "ok" : "warn", "서울 전체 예측 시간",
+        d.latency_sec == null ? "—" : `${d.latency_sec}초 (속도 받기 ${sp["걸린_초"] ?? "—"}초 포함)`],
+    ];
+    document.getElementById("srcTable").innerHTML =
+      rows.map(([st, a, b]) => `<tr><td><span class="dot d-${st}"></span>${a}</td><td>${b}</td></tr>`).join("");
+
+    const label = {ok: "정상", warn: "주의", bad: "경고"};
+    document.getElementById("driftTable").innerHTML = `<tr><th>변수</th><th>지금</th><th>학습 데이터</th><th>상태</th></tr>` +
+      (d.drift.length ? d.drift.map(x => `<tr><td>${esc(x.feature)} (${esc(x.stat)})</td><td>${num(x.live, 2)}</td>
+        <td>${num(x.train, 2)}</td><td><span class="dot d-${x.status}"></span>${label[x.status]}</td></tr>`).join("")
+        : `<tr><td colspan="4" class="empty">실시간 속도를 아직 못 받았어요</td></tr>`);
+
+    const h = Object.entries(d.history || {}).sort();
+    const hist = document.getElementById("history");
+    if (h.length < 2) { hist.innerHTML = `<div class="muted">기록이 2시간 이상 쌓이면 꺾은선이 보여요 (지금 ${h.length}개).</div>`; }
+    else {
+      const W = 520, H = 70, mx = Math.max(0.15, ...h.map(e => e[1]));
+      const pts = h.map((e, i) => `${(i / (h.length - 1) * W).toFixed(1)},${(H - e[1] / mx * (H - 6)).toFixed(1)}`).join(" ");
+      const y10 = (H - 0.1 / mx * (H - 6)).toFixed(1);
+      hist.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        <line x1="0" y1="${y10}" x2="${W}" y2="${y10}" stroke="#cfd6de" stroke-dasharray="4"/>
+        <polyline fill="none" stroke="#e53935" stroke-width="2" points="${pts}"/></svg>
+        <div class="xl"><span>${h[0][0].slice(5, 16)}</span><span>점선 = 10%</span><span>${h[h.length - 1][0].slice(5, 16)}</span></div>`;
+    }
+    renderLater(d.saved_days, d.first_day);
+  } catch (e) {
+    pill.textContent = "불러오기 실패";
+    document.getElementById("srcTable").innerHTML = `<tr><td class="empty">실시간 상태를 못 불러왔어요 (${esc(e.message)})</td></tr>`;
+  }
+}
+
+// ③ 나중에 채점 ---------------------------------------------------------------
+function renderLater(savedDays, firstDay) {
+  const D = DELAYED || {year: "-", status: "waiting", metrics: {}, compare_2025: {}};
+  const done = D.status === "done";
+  document.getElementById("laterPill").textContent = done ? `${D.year}년 채점 완료` : `${D.year}년 정답 대기 중`;
+  const saved = savedDays == null ? "확인 중" : `${savedDays}일치` + (firstDay ? ` (${firstDay}부터)` : "");
+  const steps = [
+    ["매시 예측 저장", "칸 · 시각 · 점수 · 등급", "done"],
+    [done ? "저장 끝" : "지금 여기", `저장된 예측 ${saved}`, done ? "done" : "done now"],
+    [`${D.label_expected ? D.label_expected.replace(/^(\d{4})-0?(\d+)$/, "$1년 $2월") : "다음 해 5월"}쯤`, `${D.year}년 TAAS 사고 공개`, done ? "done" : ""],
+    ["칸·시각으로 맞춰 채점", "같은 방식(사고 1 : 비사고 3)", done ? "done" : ""],
+    ["결과 공개", "① 2025 값과 나란히", done ? "done" : ""],
+  ];
+  document.getElementById("timeline").innerHTML = steps.map(([t, s, c], i) =>
+    `<div class="st ${c}"><div class="c">${i + 1}</div><b>${t}</b><small>${s}</small></div>`).join("");
+  const M = D.metrics || {}, C = D.compare_2025 || {};
+  const cards = [["실제 ROC-AUC", M.roc_auc, C.roc_auc, num], ["실제 PR-AUC", M.pr_auc, C.pr_auc, num],
+                 ["'높음' 등급 사고 비율", M.high_accident_rate, C.high_accident_rate, pct]];
+  document.getElementById("laterCards").innerHTML = cards.map(([t, v, c, f]) =>
+    `<div class="ph ${v != null ? "done" : ""}"><div>${D.year} ${t}</div><div class="v">${v != null ? f(v) : "?"}</div>
+     <small>2025 test: ${f(c)}</small></div>`).join("");
+  document.getElementById("laterHow").innerHTML = `<b>채점 방식</b> · ${esc(D.how || "")} 2025보다 크게 떨어지면 다시 학습할 신호예요.`;
+}
+
+renderFixed();
+renderLater(null, null);
+loadLive();
+setInterval(loadLive, 5 * 60 * 1000);
+</script>
+</body>
+</html>

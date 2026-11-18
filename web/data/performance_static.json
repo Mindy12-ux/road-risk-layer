@@ -1,0 +1,15 @@
+{
+  "model": {"name": "LightGBM 이진 분류", "n_features": 19, "train_years": "2023-2024", "test_year": 2025,
+            "trained_on": null, "made_on": "2026-11-18"},
+  "metrics": {"roc_auc": 0.785, "pr_auc": 0.518, "pr_auc_baseline": 0.246, "n_test_rows": null},
+  "grades": [
+    {"grade": "높음", "rank_range": "상위 10%", "row_share": 0.101, "accident_rate": 0.605, "lift": 2.46, "capture": null},
+    {"grade": "보통", "rank_range": "상위 10~30%", "row_share": null, "accident_rate": null, "lift": null, "capture": null},
+    {"grade": "낮음", "rank_range": "나머지 70%", "row_share": null, "accident_rate": null, "lift": null, "capture": null}
+  ],
+  "deciles": null,
+  "fatal_capture_high_mid": 0.34,
+  "service_check": {"pr_auc_before": 0.5183, "pr_auc_after": 0.5156, "roc_auc_before": 0.7852, "roc_auc_after": 0.7840},
+  "notes": {"score_is_rank": true, "placeholder": true,
+            "placeholder_text": "임시 파일: final_test.py 기록에서 옮겨 적은 숫자만 있어요. python model/make_performance.py 를 돌리면 빈칸까지 채워져요."}
+}
