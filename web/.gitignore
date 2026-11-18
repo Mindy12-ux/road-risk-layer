@@ -1,0 +1,2 @@
+# 22MB 라 git 대신 직접 만들기: python web/make_road_limits.py data/service/moct/MOCT_LINK.shp
+data/road_links_seoul.csv
