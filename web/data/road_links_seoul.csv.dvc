@@ -1,0 +1,5 @@
+outs:
+- md5: ae29144ce50ce8887335219c8fd6afaf
+  size: 21949859
+  hash: md5
+  path: road_links_seoul.csv

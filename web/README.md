@@ -72,8 +72,8 @@ python web/app.py             # → http://localhost:5000
 
 ### 제한속도 표지판
 - 보이는 순서: 단속카메라(500m 안) → 어린이보호구역(30) → **지금 달리는 도로 구간의 제한속도**
-- 도로 제한속도: 표준노드링크(MOCT_LINK) 구간별 `MAX_SPD` → `web/data/road_links_seoul.csv`
-  (만드는 코드 `python web/make_road_limits.py data/service/moct/MOCT_LINK.shp`, pyshp 필요)
+- 도로 제한속도: 표준노드링크(MOCT_LINK) 구간별 `MAX_SPD` → `web/data/road_links_seoul.csv` (22MB, **DVC** — `dvc pull` 로 받음)
+  (다시 만드는 코드 `python web/make_road_limits.py data/service/moct/MOCT_LINK.shp`, pyshp 필요)
 - 경로를 20m 마다 보고, 15m 안·같은 방향인 가장 가까운 도로 구간 값을 씀. 60m 안 되는 짧은 값은 무시(깜빡임 방지)
 - 이 표가 없으면 예전처럼 500m 칸 안 도로들의 평균 제한속도를 씀 (골목 때문에 큰길에서도 30이 나올 수 있음)
 
