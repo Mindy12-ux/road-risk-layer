@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>서비스 소개 · SafeRoute</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* ── 메인 페이지와 같은 색·글꼴·버튼 ───────────────────── */
+  :root {
+    --orange: #ff7a1a; --orange2: #ff9a3c; --red: #e02424; --yellow: #f5b82e;
+    --ink: #ffffff; --ink2: rgba(255,255,255,.78); --ink3: rgba(255,255,255,.55);
+    --line: rgba(255,255,255,.14); --glass: rgba(16,22,38,.62); --bg: #0a0e1a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; color: var(--ink); background: var(--bg); }
+  a { color: inherit; text-decoration: none; }
+
+  header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 40px;
+    height: 80px; padding: 0 4vw; border-bottom: 1px solid var(--line);
+    background: rgba(8,11,22,.55); backdrop-filter: blur(14px); transition: background .3s; }
+  header.solid { background: rgba(8,11,22,.92); }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo b { font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+  .logo b span { color: var(--orange); }
+  .logo small { display: block; font-size: 12px; color: var(--ink2); margin-top: 2px; }
+  nav { display: flex; gap: clamp(24px, 3.4vw, 56px); margin: 0 auto; font-size: 16px; font-weight: 500; }
+  nav a { opacity: .85; position: relative; padding: 6px 0; } nav a:hover { color: var(--orange2); }
+  nav a.on { opacity: 1; color: var(--orange2); font-weight: 700; }
+  nav a.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--orange); border-radius: 2px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; font-weight: 700; white-space: nowrap;
+    padding: 12px 26px; font-size: 16px; border: 0; cursor: pointer; transition: transform .15s; font-family: inherit; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.fill { background: var(--orange); color: #fff; box-shadow: 0 6px 24px rgba(255,122,26,.4); }
+  .btn.ghost { border: 1.5px solid rgba(255,255,255,.55); color: #fff; }
+
+  /* ── 첫 화면: 메인 사진을 어둡게 깔고 소개 ──────────────── */
+  .top { position: relative; min-height: 78vh; display: flex; align-items: flex-end; padding: 140px 4vw 70px; overflow: hidden; }
+  .top::before { content: ""; position: absolute; inset: -20px; background: url("/static/hero.webp") 70% 62% / cover no-repeat;
+    filter: blur(2px) saturate(1.1); transform: scale(1.04); animation: drift 24s ease-in-out infinite alternate; }
+  .top::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(8,11,22,.95) 0%, rgba(8,11,22,.75) 45%, rgba(8,11,22,.35) 100%),
+                linear-gradient(180deg, rgba(8,11,22,0) 55%, var(--bg) 100%); }
+  @keyframes drift { to { transform: scale(1.1) translate(-1.5%, -1%); } }
+  .top-in { position: relative; z-index: 1; width: 100%; max-width: 1240px; margin: 0 auto; }
+  .kicker { font-size: 15px; font-weight: 700; letter-spacing: 3px; color: var(--orange2); }
+  .top h1 { font-size: clamp(36px, 5.4vw, 72px); line-height: 1.15; font-weight: 900; letter-spacing: -2px; margin: 16px 0 22px; }
+  .top h1 em { font-style: normal; color: var(--orange); }
+  .top p { word-break: keep-all;  font-size: clamp(16px, 1.4vw, 19px); line-height: 1.7; color: var(--ink2); max-width: 640px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 48px; max-width: 980px;
+    background: var(--glass); border: 1px solid var(--line); border-radius: 18px; backdrop-filter: blur(8px); }
+  .stat { padding: 22px 26px; } .stat + .stat { border-left: 1px solid var(--line); }
+  .stat b { display: block; font-size: clamp(26px, 2.6vw, 38px); font-weight: 900; color: var(--orange); font-style: italic; letter-spacing: -1px; }
+  .stat b small { font-size: .5em; font-style: normal; color: var(--ink); margin-left: 3px; }
+  .stat span { font-size: 14px; color: var(--ink2); }
+
+  /* ── 공통 섹션 ─────────────────────────────────────── */
+  section { max-width: 1240px; margin: 0 auto; padding: 100px 4vw 0; }
+  .sec-head { margin-bottom: 40px; }
+  .sec-head h2 { font-size: clamp(28px, 3vw, 42px); font-weight: 800; letter-spacing: -1px; margin-top: 10px; }
+  .sec-head h2 em { font-style: normal; color: var(--orange); }
+  .sec-head p { color: var(--ink2); font-size: 17px; margin-top: 12px; line-height: 1.6; }
+  .card { background: linear-gradient(160deg, rgba(30,38,62,.7), rgba(14,19,33,.7)); border: 1px solid var(--line); border-radius: 20px; }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* 예측 흐름 4단계 */
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; position: relative; }
+  .flow .card { padding: 28px 24px; position: relative; }
+  .flow .card:not(:last-child)::after { content: "→"; position: absolute; right: -16px; top: 50%; translate: 0 -50%;
+    color: var(--orange); font-size: 22px; font-weight: 900; z-index: 2; }
+  .num { font-size: 14px; font-weight: 800; color: var(--orange); letter-spacing: 1px; }
+  .flow b, .feat b { display: block; font-size: 20px; margin: 12px 0 10px; }
+  .flow span, .feat span { color: var(--ink2); font-size: 15px; line-height: 1.65; }
+  .ico { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+    background: rgba(255,122,26,.12); border: 1px solid rgba(255,122,26,.35); }
+
+  /* 기능 3개 */
+  .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feat { overflow: hidden; }
+  .feat .pic { height: 190px; position: relative; border-bottom: 1px solid var(--line);
+    background: radial-gradient(ellipse at 50% 120%, rgba(255,122,26,.18), transparent 60%), #0d1222; }
+  .feat .txt { padding: 24px 26px 28px; }
+  .feat .go { display: inline-block; margin-top: 16px; color: var(--orange2); font-weight: 700; font-size: 15px; }
+  /* 기능 그림: 위험 지도 칸 */
+  .cells { position: absolute; inset: 22px 28px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+  .cells i { border-radius: 3px; background: rgba(255,255,255,.05); }
+  .cells i.h { background: rgba(224,36,36,.75); box-shadow: 0 0 10px rgba(224,36,36,.5); }
+  .cells i.m { background: rgba(245,184,46,.55); }
+  /* 기능 그림: 경로 비교 */
+  .routes { position: absolute; inset: 26px 28px; display: grid; gap: 12px; align-content: center; }
+  .r { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 10px; font-size: 13px; color: var(--ink2); }
+  .r .bar { height: 10px; border-radius: 6px; background: rgba(255,255,255,.08); display: flex; overflow: hidden; }
+  .r .bar i { display: block; height: 100%; } .r .bar i + i { margin-left: 2px; }
+  .r .g { font-weight: 800; font-size: 12px; text-align: center; border-radius: 999px; padding: 3px 0; }
+  .r.best { color: #fff; } .r.best .tag { color: var(--orange2); }
+  /* 기능 그림: 이유 카드 */
+  .why { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: 78%; padding: 16px 18px; border-radius: 14px;
+    background: rgba(10,14,26,.9); border: 1px solid rgba(255,255,255,.2); font-size: 13px; line-height: 1.75; color: var(--ink2); }
+  .why .t { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #fff; font-size: 14px; margin-bottom: 6px; }
+  .why .today { color: #6ea8ff; font-weight: 700; }
+
+  /* 길안내 기능 3개 (팀원 기능: 음성 길안내·단속카메라·어린이보호구역) */
+  .drive-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .hud { position: absolute; left: 22px; right: 22px; top: 24px; display: grid; gap: 8px; }
+  .hud .turn { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px;
+    background: rgba(10,14,26,.92); border: 1px solid var(--line); border-left: 4px solid var(--orange); }
+  .hud .turn .d { font-size: 24px; font-weight: 900; color: var(--orange2); line-height: 1; }
+  .hud .turn small { display: block; font-size: 12px; color: var(--ink2); margin-top: 3px; }
+  .hud .warnbar { padding: 7px 12px; border-radius: 10px; background: var(--red); font-size: 12.5px; font-weight: 800; }
+  .hud .voice { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink2); padding: 0 4px; }
+  .hud .voice i { display: inline-flex; gap: 2px; align-items: flex-end; height: 14px; }
+  .hud .voice i b { display: block; width: 3px; margin: 0; background: var(--orange); border-radius: 2px; animation: eq 1s ease-in-out infinite; }
+  .hud .voice i b:nth-child(2) { animation-delay: -.3s; } .hud .voice i b:nth-child(3) { animation-delay: -.6s; }
+  @keyframes eq { 0%,100% { height: 4px; } 50% { height: 14px; } }
+  .signs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 18px; }
+  .lim { width: 74px; height: 74px; border-radius: 50%; background: #fff; border: 8px solid #e53935; color: #111;
+    display: grid; place-items: center; font-size: 26px; font-weight: 900; flex: none; }
+  .signs .cambar { padding: 10px 14px; border-radius: 12px; background: rgba(10,14,26,.92); border: 2px solid var(--red); font-size: 13.5px; font-weight: 800; line-height: 1.5; }
+  .signs .cambar small { display: block; color: var(--ink2); font-weight: 600; font-size: 12px; }
+  .zonebar { padding: 10px 14px; border-radius: 12px; background: #ffd93b; color: #2a1d00; font-size: 13.5px; font-weight: 800; line-height: 1.5; }
+  .zonebar small { display: block; font-weight: 600; font-size: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .chips span { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--ink2); }
+
+  /* 위험 요인 막대 */
+  .factors-wrap { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; }
+  .bars { padding: 30px 32px; }
+  .bar-row { display: grid; grid-template-columns: 170px 1fr 54px; align-items: center; gap: 14px; padding: 9px 0; font-size: 15px; }
+  .bar-row .track { height: 12px; border-radius: 6px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .bar-row .fill { height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, #c2410c, var(--orange));
+    transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+  .bar-row.today .fill { background: linear-gradient(90deg, #1d4ed8, #6ea8ff); }
+  .bar-row .v { text-align: right; color: var(--ink2); font-variant-numeric: tabular-nums; }
+  .bar-row .tg { font-size: 11px; font-weight: 800; color: #6ea8ff; margin-left: 6px; }
+  .bars .note { margin-top: 16px; font-size: 13px; color: var(--ink3); line-height: 1.6; }
+  .side { padding: 30px 32px; display: flex; flex-direction: column; gap: 18px; }
+  .side h3 { font-size: 19px; }
+  .pill-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 14px; display: inline-flex; gap: 8px; align-items: center; }
+  .pill i { width: 10px; height: 10px; border-radius: 3px; }
+  .side p { color: var(--ink2); font-size: 15px; line-height: 1.7; }
+  .side .rule { background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; font-size: 14px; line-height: 1.9; color: var(--ink2); }
+  .side .rule b { color: #fff; }
+
+  /* 데이터와 한계 */
+  .data { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .data .card { padding: 22px 20px; }
+  .data b { display: block; font-size: 16px; margin: 12px 0 6px; }
+  .data span { font-size: 13.5px; color: var(--ink2); line-height: 1.6; }
+  .notice { margin-top: 20px; padding: 22px 26px; display: flex; gap: 18px; align-items: flex-start;
+    border-color: rgba(255,122,26,.35); background: linear-gradient(160deg, rgba(255,122,26,.08), rgba(14,19,33,.7)); }
+  .notice p { color: var(--ink2); font-size: 15px; line-height: 1.75; }
+  .notice p b { color: #fff; }
+
+  /* 마지막 행동 버튼 */
+  .cta-band { max-width: 1240px; margin: 110px auto 0; padding: 0 4vw; }
+  .cta-in { position: relative; overflow: hidden; border-radius: 26px; padding: 54px 56px; display: flex; align-items: center; justify-content: space-between; gap: 30px;
+    border: 1px solid rgba(255,255,255,.18); }
+  .cta-in::before { content: ""; position: absolute; inset: 0; background: url("/static/hero.webp") 80% 60% / cover; }
+  .cta-in::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,11,22,.94) 30%, rgba(8,11,22,.4)); }
+  .cta-in > * { position: relative; z-index: 1; }
+  .cta-in h2 { font-size: clamp(24px, 2.6vw, 36px); font-weight: 800; letter-spacing: -1px; }
+  .cta-in h2 em { font-style: normal; color: var(--orange); }
+  .cta-in p { color: var(--ink2); margin-top: 10px; }
+  .cta-in .btn { padding: 18px 32px; font-size: 18px; }
+  footer { text-align: center; color: var(--ink3); font-size: 13px; padding: 60px 16px 50px; }
+
+  /* ── 좁은 화면 ─────────────────────────────────────── */
+  @media (max-width: 1000px) {
+    .flow, .data { grid-template-columns: repeat(2, 1fr); }
+    .flow .card::after { display: none; }
+    .feats, .factors-wrap, .drive-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(3) { border-left: 0; } .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
+  @media (max-width: 760px) {
+    header { padding: 0 16px; height: 64px; gap: 12px; }
+    nav { display: none; }
+    .btns { margin-left: auto; } .btns .fill { padding: 10px 16px; font-size: 14px; }
+    .logo b { font-size: 21px; } .logo svg { width: 36px; }
+    .top { padding: 110px 16px 50px; min-height: 0; }
+    section { padding: 70px 16px 0; }
+    .flow, .data { grid-template-columns: 1fr; }
+    .stat { padding: 16px 18px; }
+    .bars, .side { padding: 22px 18px; }
+    .bar-row { grid-template-columns: 112px 1fr 44px; font-size: 13.5px; gap: 10px; }
+    .cta-band { padding: 0 16px; margin-top: 70px; }
+    .cta-in { flex-direction: column; align-items: flex-start; padding: 34px 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .top::before { animation: none; } .reveal { opacity: 1; transform: none; transition: none; } .bar-row .fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header id="hd">
+  <a class="logo" href="/">
+    <svg width="46" height="52" viewBox="0 0 46 52"><path d="M23 2 L43 9 V25 C43 38 34 46 23 50 C12 46 3 38 3 25 V9 Z" fill="none" stroke="#ff7a1a" stroke-width="4"/>
+      <path d="M12 30 L32 16 L24 34 L21 26 Z" fill="#ff7a1a"/></svg>
+    <div><b>Safe<span>Route</span></b><small>Predict. Avoid. Drive Safe.</small></div>
+  </a>
+  <nav>
+    <a href="/about" class="on">서비스 소개</a>
+    <a href="/app">위험 예측</a>
+    <a href="/performance">모델 성능</a>
+  </nav>
+  <div class="btns"><a class="btn fill" href="/app">시작하기 →</a></div>
+</header>
+
+<!-- 첫 화면 -->
+<div class="top">
+  <div class="top-in">
+    <div class="kicker">SERVICE</div>
+    <h1>모든 출발이,<br><em>안전한 도착</em>이 되도록</h1>
+    <p>SafeRoute는 서울을 500m 칸으로 나누고, 칸마다 사고가 날 위험을 계산해요.
+       출발 전에 경로의 위험을 비교하고, 달리는 동안에는 음성으로 위험 구간을 미리 알려 드려요.</p>
+    <div class="stats">
+      <div class="stat"><b>2,118<small>칸</small></b><span>서울 500m 격자</span></div>
+      <div class="stat"><b>19<small>개</small></b><span>위험을 계산하는 변수</span></div>
+      <div class="stat"><b>72<small>시간</small></b><span>지금부터 미리 볼 수 있는 시간</span></div>
+      <div class="stat"><b id="live-n">…<small>곳</small></b><span>지금 위험 높음 구역</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 1. 어떻게 예측하나요 -->
+<section id="how">
+  <div class="sec-head reveal">
+    <div class="kicker">HOW IT WORKS</div>
+    <h2>위험은 <em>이렇게</em> 계산돼요</h2>
+    <p>과거 사고 기록과 지금의 도로·날씨 상황을 합쳐, 칸마다 위험 등급을 매겨요.</p>
+  </div>
+  <div class="flow">
+    <div class="card reveal">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+      <div class="num" style="margin-top:16px">STEP 01</div><b>데이터 모으기</b>
+      <span>사고 기록, 실시간 도로 속도, 생활인구, 도로 정보, 날씨·예보를 모아요.</span>
+    </div>
+    <div class="card reveal">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+      <div class="num" style="margin-top:16px">STEP 02</div><b>칸마다 정리하기</b>
+      <span>서울 2,118칸마다 시간·날씨·도로·사람 등 19가지 값을 만들어요.</span>
+    </div>
+    <div class="card reveal">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V6a4 4 0 0 1 4-4z"/><circle cx="12" cy="10" r="2"/></svg></div>
+      <div class="num" style="margin-top:16px">STEP 03</div><b>AI가 위험 계산</b>
+      <span>LightGBM 모델이 1시간 안에 사고가 날 가능성을 칸마다 계산해요.</span>
+    </div>
+    <div class="card reveal">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><path d="M12 3 L22 20 H2 Z" stroke-linejoin="round"/><path d="M12 10v4M12 17v.5" stroke-linecap="round"/></svg></div>
+      <div class="num" style="margin-top:16px">STEP 04</div><b>등급과 이유 안내</b>
+      <span>높음·보통·낮음 등급과 함께, SHAP으로 찾은 "왜 위험한지"를 문장으로 보여 줘요.</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2. 무엇을 할 수 있나요 -->
+<section id="features">
+  <div class="sec-head reveal">
+    <div class="kicker">FEATURES</div>
+    <h2>SafeRoute로 <em>할 수 있는 것</em></h2>
+  </div>
+  <div class="feats">
+    <div class="card feat reveal">
+      <div class="pic"><div class="cells" id="cells"></div></div>
+      <div class="txt"><div class="num">01</div><b>서울 위험 지도</b>
+        <span>지금부터 72시간 뒤까지 시간과 날씨를 골라, 서울 전체의 위험 높음·보통 구역을 지도에서 한눈에 봐요. 위험한 곳 TOP 10도 알려 줘요.</span>
+        <a class="go" href="/app#top">지도 보러 가기 →</a></div>
+    </div>
+    <div class="card feat reveal">
+      <div class="pic"><div class="routes">
+        <div class="r best"><span>경로 A <span class="tag">안전</span></span><div class="bar"><i style="width:12%;background:var(--red)"></i><i style="width:26%;background:var(--yellow)"></i><i style="flex:1;background:rgba(255,255,255,.18)"></i></div><span class="g" style="background:rgba(245,184,46,.2);color:var(--yellow)">보통</span></div>
+        <div class="r"><span>경로 B</span><div class="bar"><i style="width:38%;background:var(--red)"></i><i style="width:26%;background:var(--yellow)"></i><i style="flex:1;background:rgba(255,255,255,.18)"></i></div><span class="g" style="background:rgba(224,36,36,.22);color:#ff6b6b">높음</span></div>
+        <div class="r"><span>경로 C</span><div class="bar"><i style="width:41%;background:var(--red)"></i><i style="width:22%;background:var(--yellow)"></i><i style="flex:1;background:rgba(255,255,255,.18)"></i></div><span class="g" style="background:rgba(224,36,36,.22);color:#ff6b6b">높음</span></div>
+      </div></div>
+      <div class="txt"><div class="num">02</div><b>안전한 경로 비교</b>
+        <span>출발지와 도착지를 넣으면 경로를 최대 3개 찾아, 위험 구간이 가장 적은 "가장 안전한 길"을 알려 줘요.</span>
+        <a class="go" href="/app">경로 찾으러 가기 →</a></div>
+    </div>
+    <div class="card feat reveal">
+      <div class="pic"><div class="why">
+        <div class="t"><svg width="16" height="15" viewBox="0 0 44 40"><path d="M22 3 L41 37 H3 Z" fill="#e02424"/><rect x="20" y="13" width="4" height="13" rx="2" fill="#fff"/><circle cx="22" cy="31" r="2.5" fill="#fff"/></svg>위험 높음 · 중구 태평로1가</div>
+        · 최근 3년간 사고가 많았던 곳이에요<br>
+        · 18시 무렵에 사고가 잦은 곳이에요<br>
+        · <span class="today">오늘 ·</span> 평소보다 차가 막혀요
+      </div></div>
+      <div class="txt"><div class="num">03</div><b>위험한 이유 설명</b>
+        <span>칸을 누르면 그곳이 왜 위험한지 쉬운 문장으로 알려 줘요. 비·막힘처럼 오늘만의 이유는 따로 표시해요.</span>
+        <a class="go" href="/app#top">이유 확인하기 →</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. 길안내 (팀원 기능) -->
+<section id="drive">
+  <div class="sec-head reveal">
+    <div class="kicker">DRIVING GUIDE</div>
+    <h2>달리는 중에도 <em>위험을 미리</em> 알려 줘요</h2>
+    <p>경로를 고르고 "경로 안내 시작"을 누르면 내비게이션처럼 음성으로 안내해요. 위험 구간·단속카메라·어린이보호구역을 미리 말해 줘요.</p>
+  </div>
+  <div class="drive-grid">
+    <div class="card feat reveal">
+      <div class="pic"><div class="hud">
+        <div class="turn"><span style="font-size:26px">➡️</span><div><div class="d">150m</div><small>남산3호터널 방면으로 우회전</small></div></div>
+        <div class="warnbar">⚠ 300m 앞 사고 위험 높은 구간</div>
+        <div class="voice"><i><b></b><b></b><b></b></i>"300미터 앞, 사고 위험이 높은 구간이에요"</div>
+      </div></div>
+      <div class="txt"><div class="num">01</div><b>음성 길안내</b>
+        <span>회전 지점은 500m·150m 앞에서, 위험 높음 구간은 300m 앞에서 이유와 함께 말해 줘요. 운전자 시점 화면과 전체 지도를 같이 보여 줘요.</span>
+        <div class="chips"><span>주행 시뮬레이션 1·5·20배</span><span>내 위치(GPS)</span><span>경로 벗어나면 재탐색</span><span>날씨·막힘 바꾸면 바로 다시 계산</span></div></div>
+    </div>
+    <div class="card feat reveal">
+      <div class="pic"><div class="signs">
+        <div class="lim">50</div>
+        <div class="cambar">📷 280m 앞<br>과속 단속 카메라<small>제한속도 50km/h</small></div>
+      </div></div>
+      <div class="txt"><div class="num">02</div><b>단속카메라 · 제한속도</b>
+        <span>서울 단속카메라 <b style="display:inline;font-size:inherit;margin:0;color:#fff">4,491대</b>를 경로 위에 표시하고, 500m 앞부터 화면에, 300m 앞에서 음성으로 알려 줘요. 지금 달리는 도로의 제한속도도 늘 보여 줘요.</span>
+        <div class="chips"><span>과속 613</span><span>신호 1,854</span><span>구간단속 45</span><span>주정차 1,934</span></div></div>
+    </div>
+    <div class="card feat reveal">
+      <div class="pic"><div class="signs">
+        <div class="lim">30</div>
+        <div class="zonebar">🧒 어린이보호구역<small>창서초등학교 외 2곳</small></div>
+      </div></div>
+      <div class="txt"><div class="num">03</div><b>어린이보호구역</b>
+        <span>서울 어린이보호구역 <b style="display:inline;font-size:inherit;margin:0;color:#fff">1,601곳</b>을 경로마다 알려 줘요. 300m 앞에서 "시속 30킬로미터로 줄이세요"라고 말하고, 구역을 나가면 끝났다고 알려 줘요.</span>
+        <div class="chips"><span>초등학교 604</span><span>유치원 462</span><span>어린이집 459</span><span>시속 30km</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. 위험 요인과 등급 -->
+<section id="factors">
+  <div class="sec-head reveal">
+    <div class="kicker">RISK FACTORS</div>
+    <h2>무엇이 <em>위험을 올리나요</em></h2>
+    <p>모델이 위험을 판단할 때 각 요인이 평균적으로 얼마나 영향을 줬는지예요 (SHAP 중요도).</p>
+  </div>
+  <div class="factors-wrap">
+    <div class="card bars reveal" id="bars">
+      <div class="bar-row"><span>이 시간대 사고가 잦은 곳</span><div class="track"><div class="fill" data-v="30.3"></div></div><span class="v">30.3%</span></div>
+      <div class="bar-row"><span>과거 사고가 많았던 곳</span><div class="track"><div class="fill" data-v="21.7"></div></div><span class="v">21.7%</span></div>
+      <div class="bar-row"><span>차가 많은 큰 도로</span><div class="track"><div class="fill" data-v="14.7"></div></div><span class="v">14.7%</span></div>
+      <div class="bar-row"><span>사람이 많은 곳</span><div class="track"><div class="fill" data-v="9.9"></div></div><span class="v">9.9%</span></div>
+      <div class="bar-row today"><span>평소보다 막힘<span class="tg">오늘</span></span><div class="track"><div class="fill" data-v="4.0"></div></div><span class="v">4.0%</span></div>
+      <div class="bar-row"><span>사고가 잦은 요일</span><div class="track"><div class="fill" data-v="3.2"></div></div><span class="v">3.2%</span></div>
+      <div class="bar-row"><span>교차로 근처</span><div class="track"><div class="fill" data-v="1.4"></div></div><span class="v">1.4%</span></div>
+      <div class="bar-row today"><span>비·눈, 미끄러운 노면<span class="tg">오늘</span></span><div class="track"><div class="fill" data-v="0.7"></div></div><span class="v">0.7%</span></div>
+      <p class="note">나머지(밤, 계절, 평소 속도, 해의 높이 등)는 계산에만 쓰여요. 비는 내리는 시간이 적어서 평균 영향은 작지만, 비 오는 날 그 칸의 위험은 분명히 올라가요.</p>
+    </div>
+    <div class="card side reveal">
+      <h3>위험 등급은 3가지예요</h3>
+      <div class="pill-row">
+        <span class="pill" style="background:rgba(224,36,36,.18);color:#ff7b7b"><i style="background:var(--red)"></i>높음</span>
+        <span class="pill" style="background:rgba(245,184,46,.16);color:var(--yellow)"><i style="background:var(--yellow)"></i>보통</span>
+        <span class="pill" style="background:rgba(255,255,255,.07);color:var(--ink2)"><i style="background:rgba(255,255,255,.35)"></i>낮음</span>
+      </div>
+      <p>위험 점수 숫자 대신 등급으로만 보여 줘요. 같은 위험이라도 숫자보다 등급이 더 이해하기 쉽기 때문이에요.</p>
+      <div class="rule">
+        <b>경로 등급은 이렇게 정해요</b><br>
+        경로가 지나는 거리 중 <b>높음 구역이 35.2% 이상</b> → 경로 높음<br>
+        <b>높음 + 보통이 35.2% 이상</b> → 경로 보통<br>
+        그 밖 → 경로 낮음
+        <div style="margin-top:10px;font-size:13px;color:var(--ink3);line-height:1.6">왜 35.2%일까요? 한국인이 평생 한 번 이상 교통사고를 겪을 확률이 약 35.2%예요 (3명 중 1명, 한국교통안전공단). 이 비율을 경로 위험의 기준선으로 삼았어요.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 데이터와 알아 둘 점 -->
+<section id="data">
+  <div class="sec-head reveal">
+    <div class="kicker">DATA</div>
+    <h2>믿을 수 있는 <em>공공 데이터</em>로 만들었어요</h2>
+  </div>
+  <div class="data">
+    <div class="card reveal"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><path d="M4 16l2-6h12l2 6v3H4z"/><circle cx="8" cy="19" r="1.5"/><circle cx="16" cy="19" r="1.5"/></svg></div><b>교통사고 기록</b><span>TAAS 교통사고분석시스템의 서울 사고 기록</span></div>
+    <div class="card reveal"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><path d="M3 12a9 9 0 1 1 18 0"/><path d="M12 12l5-4"/></svg></div><b>실시간 도로 속도</b><span>서울시 도로 소통 정보 (TOPIS)로 평소보다 막히는지 계산</span></div>
+    <div class="card reveal"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 1.5-4 4-4s3 1.5 3 4"/></svg></div><b>생활인구</b><span>서울시 생활인구로 칸·시간마다 사람이 얼마나 많은지 반영</span></div>
+    <div class="card reveal"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><path d="M9 3 5 21M15 3l4 18M12 5v2M12 11v2M12 17v2"/></svg></div><b>도로 정보</b><span>도로 길이, 차로 수, 교차로 여부, 도로 구간별 제한속도 (표준노드링크)</span></div>
+    <div class="card reveal"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><path d="M7 17a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 7.9z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg></div><b>날씨·예보</b><span>Open-Meteo 현재 날씨와 3일 예보로 비·눈·노면 상태 반영</span></div>
+    <div class="card reveal"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2"><rect x="3" y="7" width="14" height="10" rx="2"/><path d="M17 10l4-2v8l-4-2"/></svg></div><b>단속카메라·어린이보호구역</b><span>공공데이터포털 표준데이터 (서울 카메라 4,491대, 보호구역 1,601곳)</span></div>
+  </div>
+  <div class="card notice reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="2" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16v.5" stroke-linecap="round"/></svg>
+    <p><b>참고 정보로 활용해 주세요.</b> 위험 등급은 과거 사고 기록으로 만든 예측이라 실제와 다를 수 있어요.
+       미래 시각은 기상예보와 직접 고른 도로 상황을 기준으로 계산해요.
+       실제 운전은 항상 도로 상황과 교통 법규를 따라 주세요.</p>
+  </div>
+</section>
+
+<div class="cta-band reveal">
+  <div class="cta-in">
+    <div><h2>출발 전에, <em>내 경로의 위험</em>을 확인하세요</h2><p>출발지와 도착지만 넣으면 바로 비교해 드려요.</p></div>
+    <a class="btn fill" href="/app">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M2 11 L22 2 L13 22 L11 13 Z"/></svg>위험 예측 시작하기 →</a>
+  </div>
+</div>
+
+<footer>SafeRoute · 서울 교통사고 위험 예측 프로젝트</footer>
+
+<script>
+// 스크롤하면 위쪽 메뉴를 진하게
+const hd = document.getElementById("hd");
+addEventListener("scroll", () => hd.classList.toggle("solid", scrollY > 40), { passive: true });
+
+// 화면에 들어오면 나타나기 + 막대 채우기
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add("in");
+  if (e.target.id === "bars") e.target.querySelectorAll(".fill").forEach(f => f.style.width = (f.dataset.v / 30.3 * 100) + "%");
+  io.unobserve(e.target);
+}), { threshold: 0.15 });
+document.querySelectorAll(".reveal").forEach((el, i) => { el.style.transitionDelay = (i % 5) * 70 + "ms"; io.observe(el); });
+
+// 기능 그림: 위험 지도 칸 (높음·보통이 깜빡이며 바뀜)
+const cells = document.getElementById("cells");
+let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+for (let i = 0; i < 12 * 6; i++) cells.appendChild(document.createElement("i"));
+function shuffle() {
+  cells.querySelectorAll("i").forEach(c => { const r = rnd(); c.className = r < .12 ? "h" : r < .3 ? "m" : ""; });
+}
+shuffle(); setInterval(shuffle, 1800);
+
+// 실제 모델 결과: 지금 위험 높음 구역 수
+fetch("/api/risk").then(r => r.json()).then(d => {
+  document.getElementById("live-n").innerHTML = (d["개수"]["높음"] || 0).toLocaleString() + "<small>곳</small>";
+}).catch(() => { document.getElementById("live-n").innerHTML = "–"; });
+</script>
+</body>
+</html>
