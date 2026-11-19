@@ -96,6 +96,20 @@ python web/app.py             # → http://localhost:5000
 - 경로를 20m 마다 보고, 15m 안·같은 방향인 가장 가까운 도로 구간 값을 씀. 60m 안 되는 짧은 값은 무시(깜빡임 방지)
 - 이 표가 없으면 예전처럼 500m 칸 안 도로들의 평균 제한속도를 씀 (골목 때문에 큰길에서도 30이 나올 수 있음)
 
+### 모델 성능 페이지 (`/performance`)
+머리글의 "모델 성능" 메뉴로 들어가요. 세 칸으로 나뉘어 있어요.
+
+| 칸 | 보여주는 것 | 숫자가 오는 곳 |
+|---|---|---|
+| ① 검증된 성능 | 2025 test ROC-AUC·PR-AUC, 등급별 실제 사고 비율, 10구간 그래프, 서비스 방식 재계산 | `web/data/performance_static.json` |
+| ② 실시간 상태 | 지금 등급 비율, 날씨·속도 출처 상태, 속도비율 드리프트(학습 중앙값 0.97과 비교), 예측 시간 | `GET /api/performance/live` (실시간 예측 때마다 기록) |
+| ③ 나중에 채점 | 2026년 정답(TAAS, 2027년 5월쯤) 대기 상태, 저장된 예측 일수 | `web/data/performance_delayed.json` + `web/data/predictions/` |
+
+- `performance_static.json` 은 지금 **임시 파일**(final_test 기록에서 옮겨 적은 숫자만)이에요.
+  `dvc pull` 후 `python model/make_performance.py` 를 돌리면 저장된 모델을 다시 학습하지 않고 읽기만 해서 빈칸(보통·낮음 등급, 10구간)까지 채워요.
+- 실시간 예측을 할 때마다 시각별로 한 번씩 서울 전체 칸의 점수·등급을 `web/data/predictions/YYYY-MM-DD.csv` 에 저장해요 (git에는 안 올라감).
+  2026년 TAAS 사고가 공개되면 이 파일들로 채점해서 `performance_delayed.json` 의 `status` 를 `done`, `metrics` 를 숫자로 바꾸면 ③이 채워져요.
+
 ## 4. 인터넷에 배포하기 (가이드)
 
 ### 가장 쉬운 방법: 발표 때만 잠깐 공개 (ngrok / Cloudflare Tunnel)

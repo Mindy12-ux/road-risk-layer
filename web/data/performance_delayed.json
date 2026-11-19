@@ -1,0 +1,8 @@
+{
+  "year": 2026,
+  "status": "waiting",
+  "label_expected": "2027-05",
+  "metrics": {"roc_auc": null, "pr_auc": null, "high_accident_rate": null},
+  "compare_2025": {"roc_auc": 0.785, "pr_auc": 0.518, "high_accident_rate": 0.605},
+  "how": "저장된 매시 예측(web/data/predictions/)을 2026년 TAAS 사고와 칸·시각으로 맞춰, 사고 1 : 비사고 3 표본으로 ①과 같은 지표를 계산해요."
+}
