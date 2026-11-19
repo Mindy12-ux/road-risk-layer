@@ -1,0 +1,6 @@
+outs:
+- md5: b3d917fd98e03565b8c924abb546e16a.dir
+  size: 840593947
+  nfiles: 9
+  hash: md5
+  path: service

@@ -1,0 +1,6 @@
+outs:
+- md5: 78ba474c3d204c804dbb737de42b7286.dir
+  size: 26110844
+  nfiles: 11
+  hash: md5
+  path: service_tables

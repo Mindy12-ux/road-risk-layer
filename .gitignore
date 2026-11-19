@@ -7,3 +7,5 @@ venv/
 
 # 모델 결과 (각자 컴퓨터에서 만듦)
 /results/
+# API 키 (GitHub에 올리지 않기)
+.env

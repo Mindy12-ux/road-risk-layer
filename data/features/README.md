@@ -8,4 +8,6 @@
 | `zone` | woojin | grid_id | 어린이보호구역_수, 노인보호구역_수, 장애인보호구역_수, 보호구역CCTV_합계 | 공공데이터포털 전국어린이보호구역·전국노인장애인보호구역 표준데이터 (서울 구별 파일 합본) → `scripts/features/zone.py` | 준비됨 |
 | `road_link` | cwoo0611 | grid_id | 칸_도로연장_m, 칸_평균제한속도_kmh, 칸_최대차로수, 칸_최고도로등급, 칸_간선도로비율, 칸_터널비율, 칸_교량고가비율 | 국가교통정보센터 전국표준노드링크 (MOCT_LINK.shp) → `scripts/features/road_link.py` | 준비됨 |
 | `road_speed` | cwoo0611 | date, 발생시, grid_id | 칸_직전1시간_통행속도_kmh, 칸_평소속도_kmh, 칸_직전1시간_속도비율, 칸_속도출처 | 서울시 TOPIS 도로별 일자별 통행속도 2020~2025 + TOPIS 구간 위치 + 표준노드링크 → `scripts/features/road_speed.py` | 준비됨 |
+| `camera` | Jibeom0204 | grid_id | 과속단속카메라_수, 신호단속카메라_수 | 공공데이터포털 전국무인교통단속카메라표준데이터 (2026-06 수정본) → `scripts/features/camera.py` | 준비됨 (현재 설치 기준, 설치연도 미반영) |
+| `speed_bump` | Jibeom0204 | grid_id | 과속방지턱_수 | 공공데이터포털 전국과속방지턱표준데이터 → `scripts/features/speed_bump.py` | 참고용 (서울 자료가 2019~2020년 기준이고 구별 누락이 큼) |
 | `pop` | 민채 | date, 발생시, grid_id | 생활인구_내국인, 생활인구_장기외국인, 생활인구_단기외국인, 생활인구_합계 | 서울 생활인구 집계구 (`population/run_monthly.py`) → `scripts/features/pop.py` | 72개월 집계 중 |
