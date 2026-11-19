@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>위험 예측 · SafeRoute</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* SafeRoute 공통 디자인 (메인·서비스 소개와 같은 색·글꼴·메뉴) */
+  :root { --orange:#ff7a1a; --orange2:#ff9a3c; --red:#ff4d4f; --yellow:#f5b82e; --green:#3ddc84; --blue:#3d8bff;
+    --ink:#fff; --ink2:rgba(255,255,255,.78); --sub:rgba(255,255,255,.55); --line:rgba(255,255,255,.12);
+    --glass:rgba(16,22,38,.82); --bg:#0a0e1a; --field:rgba(255,255,255,.06); --hd:72px; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif; color:var(--ink); background:var(--bg); }
+  a { color:inherit; text-decoration:none; }
+
+  /* ── 상단 메뉴 (메인과 같은 모양) ── */
+  header { position:relative; z-index:40; display:flex; align-items:center; gap:40px; height:var(--hd); padding:0 28px;
+    border-bottom:1px solid var(--line); background:rgba(8,11,22,.96); }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo b { font-size:22px; font-weight:800; letter-spacing:-.5px; } .logo b span { color:var(--orange); }
+  .logo small { display:block; font-size:11px; color:var(--ink2); margin-top:1px; }
+  nav { display:flex; gap:clamp(24px,3.4vw,52px); margin:0 auto; font-size:15px; font-weight:500; }
+  nav a { opacity:.85; position:relative; padding:6px 0; } nav a:hover { color:var(--orange2); }
+  nav a.on { opacity:1; color:var(--orange2); font-weight:700; }
+  nav a.on::after { content:""; position:absolute; left:0; right:0; bottom:-2px; height:2px; background:var(--orange); border-radius:2px; }
+  .hbtn { border-radius:999px; font-weight:700; padding:10px 22px; font-size:15px; background:var(--orange); color:#fff;
+    box-shadow:0 6px 24px rgba(255,122,26,.35); white-space:nowrap; }
+
+  /* ── 왼쪽 패널 + 지도 ── */
+  #app { display:flex; height:calc(100vh - var(--hd)); height:calc(100dvh - var(--hd)); }
+  #panel { width:380px; min-width:320px; overflow-y:auto; padding:22px 20px 34px; border-right:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(20,27,46,.98), rgba(10,14,26,.98)); scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.2) transparent; }
+  #map { flex:1; position:relative; background:#11161f; }
+  .ptitle { font-size:13px; font-weight:700; letter-spacing:3px; color:var(--orange2); }
+  h1 { font-size:24px; font-weight:800; margin:6px 0 4px; letter-spacing:-.5px; } h1 em { font-style:normal; color:var(--orange); }
+  .lead { font-size:13px; color:var(--sub); margin:0 0 6px; line-height:1.5; }
+  h2 { font-size:15px; font-weight:700; margin:24px 0 10px; display:flex; align-items:center; gap:8px; }
+  h2 .n { width:22px; height:22px; border-radius:50%; background:var(--orange); color:#fff; font-size:12px; font-weight:800;
+    display:inline-flex; align-items:center; justify-content:center; flex:none; }
+  .box { background:var(--field); border:1px solid var(--line); border-radius:14px; padding:12px; }
+  .row { display:flex; gap:8px; align-items:center; margin-bottom:8px; } .row:last-child { margin-bottom:0; }
+  input[type=text], select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:14px;
+    font-family:inherit; background:rgba(8,11,22,.6); color:var(--ink); outline:none; }
+  input[type=text]::placeholder { color:var(--sub); }
+  input[type=text]:focus, select:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,122,26,.18); }
+  select option { background:#141a2b; color:#fff; }
+  input[type=range] { accent-color:var(--orange); }
+  button { padding:9px 12px; border:1px solid var(--line); background:rgba(255,255,255,.06); color:var(--ink); border-radius:10px;
+    cursor:pointer; font-size:13px; font-family:inherit; white-space:nowrap; }
+  button:hover { border-color:rgba(255,255,255,.35); }
+  button.primary { background:var(--orange); color:#fff; border:0; width:100%; padding:14px; font-size:16px; font-weight:800;
+    border-radius:999px; box-shadow:0 6px 24px rgba(255,122,26,.35); }
+  button.primary:hover { background:var(--orange2); }
+  .sug { border:1px solid var(--line); border-radius:10px; margin:-4px 0 8px 52px; max-height:200px; overflow-y:auto; display:none; background:#141a2b; }
+  .sug div { padding:8px 10px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--line); }
+  .sug div:hover { background:rgba(255,122,26,.14); }
+  .sug small { color:var(--sub); display:block; }
+  .lbl { font-size:13px; color:var(--ink2); width:44px; flex:none; font-weight:600; }
+  #timeLabel { font-weight:800; font-size:15px; color:var(--orange2); }
+  .badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:800; color:#fff; }
+  .b-높음 { background:var(--red); } .b-보통 { background:var(--yellow); color:#2a1d00; } .b-낮음 { background:#5d6b7e; }
+  .card { border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:10px; cursor:pointer;
+    background:linear-gradient(160deg, rgba(30,38,62,.7), rgba(14,19,33,.7)); transition:border-color .15s; }
+  .card:hover { border-color:rgba(255,255,255,.3); }
+  .card.sel { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,122,26,.18); }
+  .card .t { display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:15px; }
+  .card .m { font-size:13px; color:var(--ink2); margin-top:6px; }
+  .safe { color:var(--green); font-size:13px; font-weight:700; margin-top:6px; }
+  .warn { font-size:12px; margin:4px 0 0 0; padding-left:16px; color:var(--ink2); }
+  .warn li { margin-bottom:3px; } .warn b { color:#fff; }
+  .top10 { padding-left:0; list-style:none; margin:0; counter-reset:t; }
+  .top10 li { font-size:13px; padding:9px 10px 9px 38px; cursor:pointer; position:relative; border-radius:10px; counter-increment:t; }
+  .top10 li::before { content:counter(t); position:absolute; left:10px; top:9px; font-weight:900; font-style:italic; color:var(--orange); }
+  .top10 li:hover { background:rgba(255,255,255,.06); }
+  .top10 small { color:var(--sub) !important; }
+  .meta { font-size:12px; color:var(--sub); margin-top:8px; line-height:1.6; }
+  .notice { font-size:12px; color:var(--ink2); background:rgba(255,122,26,.08); border:1px solid rgba(255,122,26,.3);
+    border-radius:12px; padding:10px 12px; margin-top:18px; line-height:1.55; }
+  .legend { position:absolute; right:14px; bottom:26px; z-index:5; background:var(--glass); backdrop-filter:blur(8px); color:var(--ink);
+    border:1px solid var(--line); border-radius:12px; padding:9px 12px; font-size:12px; }
+  .legend span { display:inline-block; width:12px; height:12px; vertical-align:middle; margin-right:4px; border-radius:3px; }
+  /* 칸 클릭 이유 카드 (지도 위 어두운 카드) */
+  .info { position:relative; width:270px; padding:14px 16px; font-size:13px; line-height:1.55; color:var(--ink); background:rgba(14,19,33,.95);
+    border:1px solid var(--line); border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.5); margin-bottom:14px; }
+  .info::after { content:""; position:absolute; left:50%; bottom:-7px; width:12px; height:12px; background:rgba(14,19,33,.95);
+    border-right:1px solid var(--line); border-bottom:1px solid var(--line); transform:translateX(-50%) rotate(45deg); }
+  .info b { font-size:15px; } .info ul { color:var(--ink2); }
+  .info .x { position:absolute; right:8px; top:6px; cursor:pointer; color:var(--sub); font-size:16px; padding:2px 6px; }
+  .rlabel { background:rgba(14,19,33,.92); color:#fff; border:2px solid var(--blue); border-radius:999px; padding:4px 10px; font-size:12px;
+    font-weight:800; white-space:nowrap; box-shadow:0 2px 10px rgba(0,0,0,.4); font-family:Pretendard,sans-serif; }
+  #loading { position:absolute; left:50%; top:14px; transform:translateX(-50%); z-index:6; background:var(--orange); color:#fff;
+    padding:7px 16px; border-radius:999px; font-size:13px; font-weight:700; display:none; box-shadow:0 6px 20px rgba(255,122,26,.4); }
+  #nokey { padding:30px; font-size:14px; line-height:1.7; }
+  /* 지도 바탕을 밤 분위기로 (일반 지도일 때만, 위성은 그대로) */
+  body.darkmap #map img[src*="mts."], body.darkmap #driveMap img[src*="mts."] { filter:invert(.92) hue-rotate(180deg) brightness(.95) contrast(.9) saturate(.6); }
+
+  /* 날짜·시각 */
+  input[type=date] { width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:10px; font-size:14px; font-family:inherit;
+    background:rgba(8,11,22,.6); color:var(--ink); color-scheme:dark; }
+  #hh, #mm { width:auto; flex:1; }
+  .sug .head { font-size:11px; color:var(--orange2); font-weight:700; cursor:default; padding:6px 10px 4px; }
+  .sug .head:hover { background:none; }
+  /* 지도 누른 곳: 출발·도착 고르기 */
+  .pick { background:rgba(14,19,33,.96); border:1px solid var(--line); border-radius:14px; padding:12px; width:230px; color:#fff;
+    box-shadow:0 10px 30px rgba(0,0,0,.5); font-family:Pretendard,sans-serif; margin-bottom:12px; position:relative; }
+  .pick .ad { font-size:13px; font-weight:700; margin-bottom:10px; line-height:1.4; padding-right:16px; }
+  .pick .bt { display:flex; gap:6px; }
+  .pick button { flex:1; padding:8px 0; border-radius:999px; font-weight:800; font-size:13px; border:0; }
+  .pick .o { background:#3ddc84; color:#06210f; } .pick .d { background:var(--orange); color:#fff; }
+  .pick .x { position:absolute; right:8px; top:6px; cursor:pointer; color:var(--sub); }
+  .rlabel { cursor:pointer; } .rlabel.off { border-color:#7d8597 !important; color:#c3c8d2; background:rgba(14,19,33,.8); }
+  .routepick { font-size:12px; color:var(--sub); margin:8px 0 0; line-height:1.5; }
+  .rtabs { display:flex; gap:6px; margin-bottom:10px; }
+  .rtabs span { flex:1; text-align:center; font-size:12px; padding:6px 0; border-radius:999px; border:1px solid var(--line); cursor:pointer; color:var(--ink2); }
+  .rtabs span.on { background:var(--orange); border-color:var(--orange); color:#fff; font-weight:800; }
+  .gpsmsg { display:none; font-size:12px; line-height:1.55; color:#ffb4a3; background:rgba(255,77,79,.1); border:1px solid rgba(255,77,79,.3);
+    border-radius:10px; padding:8px 10px; margin:0 0 8px; }
+  .gpsmsg.ok { color:#9ff0c2; background:rgba(61,220,132,.1); border-color:rgba(61,220,132,.3); }
+  .gridbtn { position:absolute; right:14px; top:14px; z-index:6; background:var(--glass); backdrop-filter:blur(8px); color:#fff;
+    border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-weight:700; font-size:13px; }
+  .gridbtn.on { background:var(--orange); border-color:var(--orange); }
+  body.navigating .gridbtn { display:none; }
+  #navBottom .gridbtn2.on { background:var(--orange); border-color:var(--orange); color:#fff; font-weight:800; }
+  #riskBar .why { font-size:13px; font-weight:600; margin-top:4px; line-height:1.55; }
+  /* ---- 길안내 화면 ---- */
+  .navbtn { margin-top:10px; width:100%; background:transparent; color:var(--orange2); border:1.5px solid var(--orange); font-weight:800;
+    border-radius:999px; padding:10px; font-size:14px; }
+  .navbtn:hover { background:var(--orange); color:#fff; }
+  #hud { position:absolute; left:12px; right:12px; top:12px; z-index:7; display:none; }
+  #turn { background:rgba(14,19,33,.94); border:1px solid var(--line); border-left:5px solid var(--orange); color:#fff; border-radius:16px;
+    padding:14px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 8px 24px rgba(0,0,0,.45); }
+  #turnIcon { font-size:38px; width:48px; text-align:center; }
+  #turnDist { font-size:32px; font-weight:900; line-height:1; color:var(--orange2); }
+  #turnText { font-size:16px; margin-top:5px; font-weight:600; }
+  #riskBar { margin-top:8px; border-radius:12px; padding:9px 14px; font-size:14px; font-weight:800; display:none; box-shadow:0 4px 14px rgba(0,0,0,.35); }
+  #riskBar.높음 { background:var(--red); color:#fff; } #riskBar.보통 { background:var(--yellow); color:#2a1d00; }
+  #camBar { margin-top:8px; border-radius:12px; padding:8px 14px; font-size:15px; font-weight:800; display:none;
+    background:rgba(14,19,33,.94); color:#fff; border:2px solid var(--red); box-shadow:0 4px 14px rgba(0,0,0,.35); width:max-content; max-width:100%; }
+  #camBar .lim, #zoneBar .lim { display:inline-block; width:34px; height:34px; border-radius:50%; border:4px solid #e53935; text-align:center;
+    line-height:26px; font-size:14px; margin-right:8px; vertical-align:middle; background:#fff; color:#111; }
+  .cam { font-size:13px; background:#fff; color:#111; border:2px solid #e53935; border-radius:10px; padding:0 4px; white-space:nowrap; }
+  .cam.주정차 { border-color:#607d8b; font-size:11px; }
+  .camsum { font-size:12px; color:var(--ink2); margin-top:5px; }
+  #zoneBar { margin-top:8px; border-radius:12px; padding:8px 14px; font-size:15px; font-weight:800; display:none;
+    background:#ffd93b; color:#2a1d00; box-shadow:0 4px 14px rgba(0,0,0,.35); width:max-content; max-width:100%; }
+  .zone { font-size:12px; background:#ffd93b; color:#2a1d00; border:2px solid #f5a623; border-radius:10px; padding:0 4px; white-space:nowrap; }
+  #navBottom { position:absolute; left:12px; right:12px; bottom:12px; z-index:7; display:none; background:rgba(14,19,33,.94);
+    backdrop-filter:blur(8px); border:1px solid var(--line); border-radius:18px; padding:12px 16px; box-shadow:0 8px 24px rgba(0,0,0,.45);
+    align-items:center; gap:16px; flex-wrap:wrap; }
+  #navBottom .big { font-size:20px; font-weight:900; } #navBottom #remain { color:var(--orange2); }
+  #navBottom .sm { font-size:12px; color:var(--sub); }
+  #navBottom select, #navBottom button { width:auto; padding:7px 10px; font-size:13px; }
+  #navBottom .stop { background:#e02424; color:#fff; border:0; margin-left:auto; font-weight:800; border-radius:999px; padding:9px 18px; }
+  .car { font-size:30px; transform-origin:center; filter:drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+  /* ---- 운전자 시점 화면 (길안내 중) ---- */
+  #drive { display:none; position:fixed; inset:0; z-index:20; overflow:hidden; background:#11161f; }
+  #driveStage { position:absolute; inset:0; overflow:hidden; perspective:1100px; z-index:0; isolation:isolate; }
+  #driveStage::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(10,14,26,.85) 0%, rgba(10,14,26,0) 30%); }
+  #drive #hud, #drive #navBottom, #limitSign { transform:translateZ(0); }
+  #drive #hud { z-index:20; } #drive #navBottom { z-index:20; } #limitSign { z-index:20; } #carIcon { z-index:15; }
+  body.navigating #drive { display:block; }
+  body.navigating #panel, body.navigating header { display:none; }
+  body.navigating #app { height:100vh; }
+  #driveRot { position:absolute; left:50%; top:66%; width:200vmax; height:200vmax; transform-origin:50% 50%;
+    transform:translate(-50%,-50%) rotateX(48deg) rotate(0deg); transition:transform .25s linear; }
+  #driveMap { width:100%; height:100%; }
+  #carIcon { position:absolute; left:50%; top:66%; transform:translate(-50%,-50%); z-index:5; width:46px; height:46px;
+    border-radius:50%; background:var(--orange); border:4px solid #fff; color:#fff; font-size:20px; display:flex;
+    align-items:center; justify-content:center; box-shadow:0 0 0 8px rgba(255,122,26,.25), 0 2px 12px rgba(0,0,0,.5); }
+  #drive #hud { display:block; left:14px; top:14px; right:auto; width:min(520px, calc(100% - 430px)); }
+  #nextTurn { display:none; margin-top:6px; background:rgba(14,19,33,.9); border:1px solid var(--line); color:#fff; border-radius:12px;
+    padding:6px 12px; font-size:14px; width:max-content; max-width:100%; }
+  #drive #navBottom { display:flex; }
+  #limitSign { position:absolute; left:18px; bottom:110px; z-index:8; display:none; width:76px; height:76px; border-radius:50%;
+    background:#fff; color:#111; border:9px solid #e53935; font-size:28px; font-weight:900; text-align:center; line-height:58px;
+    box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  #limitSign small { display:block; position:absolute; left:0; right:0; bottom:-26px; font-size:13px; line-height:1; color:#fff;
+    background:#e53935; border-radius:6px; padding:3px 0; }
+  body.navigating #map { position:fixed; right:14px; top:14px; width:400px; height:300px; flex:none; z-index:30;
+    border:2px solid rgba(255,255,255,.5); border-radius:16px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  body.navigating #map .legend { display:none; }
+  @media (max-width:900px) { nav { display:none; } header { justify-content:space-between; padding:0 16px; } }
+  @media (max-width:760px) { body.navigating #map { width:180px; height:150px; } #drive #hud { width:calc(100% - 210px); }
+    #app { flex-direction:column; } #panel { width:100%; min-width:0; height:50%; border-right:none; border-bottom:1px solid var(--line); padding:16px 16px 28px; }
+    #map { flex:1; } .logo small { display:none; } .hbtn { padding:8px 16px; font-size:14px; } }
+</style>
+</head>
+<body class="darkmap">
+<header>
+  <a class="logo" href="/">
+    <svg width="36" height="41" viewBox="0 0 46 52"><path d="M23 2 L43 9 V25 C43 38 34 46 23 50 C12 46 3 38 3 25 V9 Z" fill="none" stroke="#ff7a1a" stroke-width="4"/>
+      <path d="M12 30 L32 16 L24 34 L21 26 Z" fill="#ff7a1a"/></svg>
+    <div><b>Safe<span>Route</span></b><small>Predict. Avoid. Drive Safe.</small></div>
+  </a>
+  <nav>
+    <a href="/about">서비스 소개</a>
+    <a href="/app" class="on">위험 예측</a>
+  </nav>
+  <a class="hbtn" href="/app">시작하기 →</a>
+</header>
+<div id="app">
+  <div id="panel">
+    <div class="ptitle">ROUTE RISK</div>
+    <h1>안전한 <em>경로</em> 찾기</h1>
+    <p class="lead">출발지와 도착지를 고르면 경로 위의 사고 위험을 알려 드려요. 지도를 눌러서 고를 수도 있어요.</p>
+
+    <h2><span class="n">1</span>출발지 · 도착지</h2>
+    <div class="box">
+      <div class="row"><span class="lbl">출발</span><input id="qO" type="text" placeholder="장소·주소 검색 (예: 서울역)"><button id="gps" title="내 현재 위치">📍 내 위치</button></div>
+      <div id="sugO" class="sug"></div>
+      <div id="gpsMsg" class="gpsmsg"></div>
+      <div class="row"><span class="lbl">도착</span><input id="qD" type="text" placeholder="장소·주소 검색 (예: 강남역)"></div>
+      <div id="sugD" class="sug"></div>
+    </div>
+
+    <h2><span class="n">2</span>출발 시각 · 날씨</h2>
+    <div class="box">
+      <div class="row"><span class="lbl">날짜</span><input id="date" type="date"></div>
+      <div class="row"><span class="lbl">시각</span><select id="hh"></select><span style="color:var(--sub)">:</span><select id="mm"></select>
+        <button id="nowBtn" title="지금 시각으로">지금</button></div>
+      <div class="row" style="justify-content:space-between"><span class="lbl">출발</span><span id="timeLabel">지금</span></div>
+      <div class="row"><span class="lbl">날씨</span>
+        <select id="weather"><option value="auto">자동 (Open-Meteo 예보)</option><option>맑음</option><option>비</option><option>눈</option></select></div>
+      <div class="row"><span class="lbl">막힘</span>
+        <select id="road"><option value="실시간">실시간 (서울시 도로 속도)</option><option>원활</option><option>평소</option><option>조금 막힘</option><option>많이 막힘</option></select></div>
+      <div class="row"><span class="lbl">지도</span>
+        <select id="mapType"><option value="ROADMAP">일반 지도 (밤 화면)</option><option value="HYBRID">위성 + 도로 이름</option><option value="SKYVIEW">위성만</option></select></div>
+      <div class="meta">날짜는 오늘부터 3일 뒤까지, 시각은 5분 단위로 고를 수 있어요. 미래 시각은 실시간 속도가 없어서 직접 고른 막힘 정도(기본 평소)를 써요.</div>
+    </div>
+
+    <button id="go" class="primary" style="margin-top:18px">경로 찾기 →</button>
+
+    <div id="routes"></div>
+
+    <h2 id="top"><span class="n">!</span>서울 위험 TOP 10 구역 <small style="font-weight:500;color:var(--sub);font-size:12px">(참고)</small></h2>
+    <ol id="top10" class="top10"></ol>
+    <div id="meta" class="meta"></div>
+    <div class="notice">{{ notice }}</div>
+  </div>
+  <div id="map">
+    <div id="loading">계산 중…</div>
+    <button id="gridBtn" class="gridbtn" title="서울 전체 500m 칸의 위험 등급을 지도에 보여 줘요">▦ 위험 격자 켜기</button>
+    <div class="legend"><b style="display:block;margin-bottom:4px">경로 위 위험</b><span style="background:#ff4d4f"></span>높음 &nbsp;<span style="background:#f5b82e"></span>보통 &nbsp;<span style="background:#3d8bff"></span>낮음 &nbsp;<span style="background:#7d8597"></span>다른 경로</div>
+  </div>
+</div>
+
+<!-- 길안내 화면: 왼쪽 큰 화면 = 운전자 시점(진행 방향이 위, 기울어진 지도), 오른쪽 위 = 위에서 본 전체 지도(#map 이 작아져서 옴) -->
+<div id="drive">
+  <div id="driveStage"><div id="driveRot"><div id="driveMap"></div></div></div>
+  <div id="carIcon">▲</div>
+  <div id="hud">
+    <div id="turn"><div id="turnIcon">⬆️</div><div><div id="turnDist">-</div><div id="turnText">-</div></div></div>
+    <div id="nextTurn"></div>
+    <div id="riskBar"></div>
+    <div id="camBar"></div>
+    <div id="zoneBar"></div>
+  </div>
+  <div id="limitSign"></div>
+  <div id="navBottom">
+      <div><div class="big" id="remain">-</div><div class="sm" id="eta">-</div></div>
+      <div><div class="sm">현재 속도</div><div class="big" id="spd">-</div></div>
+      <div><div class="sm">모드</div>
+        <select id="navMode"><option value="sim">주행 시뮬레이션</option><option value="gps">내 위치(GPS)</option></select></div>
+      <div><div class="sm">날씨 (바꾸면 바로 반영)</div>
+        <select id="navWeather"><option value="auto">자동</option><option>맑음</option><option>비</option><option>눈</option></select></div>
+      <div><div class="sm">막힘 (바꾸면 바로 반영)</div>
+        <select id="navRoad"><option value="실시간">실시간</option><option>원활</option><option>평소</option><option>조금 막힘</option><option>많이 막힘</option></select></div>
+      <div><div class="sm">배속</div>
+        <select id="navSpeed"><option value="1" selected>1배</option><option value="5">5배</option><option value="20">20배</option></select></div>
+      <button id="navGrid" class="gridbtn2">▦ 격자 켜기</button>
+      <button id="navPause">⏸ 일시정지</button>
+      <button id="navVoice">🔊 음성 켜짐</button>
+      <button id="navStop" class="stop">안내 종료</button>
+  </div>
+</div>
+
+{% if kakao_js_key %}
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&autoload=false&libraries=services"></script>
+{% endif %}
+<script>
+const HAS_KEY = {{ 'true' if kakao_js_key else 'false' }};
+const COLOR = {"높음": "#ff4d4f", "보통": "#f5b82e"};
+const ACTIVE = "#3d8bff", GRAY = "#7d8597";          // 고른 경로 = 파랑(+위험 구간 빨강·노랑), 다른 경로 = 회색
+let map, info, routeObjs = [], routeData = [], marks = {O: null, D: null}, selIdx = 0;
+let place = {O: null, D: null}, cellMarkers = [], segObjs = [];
+
+const $ = id => document.getElementById(id);
+const loading = on => $("loading").style.display = on ? "block" : "none";
+const p2 = n => String(n).padStart(2, "0");
+
+// ---------- 출발 날짜(달력) · 시각(5분 단위) ----------
+function initTime() {
+  for (let h = 0; h < 24; h++) $("hh").insertAdjacentHTML("beforeend", `<option value="${h}">${p2(h)}시</option>`);
+  for (let m = 0; m < 60; m += 5) $("mm").insertAdjacentHTML("beforeend", `<option value="${m}">${p2(m)}분</option>`);
+  const today = new Date(), last = new Date(); last.setDate(today.getDate() + 3);
+  const ymd = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+  $("date").min = ymd(today); $("date").max = ymd(last);
+  setNow();
+}
+function setNow() {                                      // 지금 시각 (5분 단위로 올림)
+  const t = new Date(Date.now() + 5 * 60000 - 1); t.setMinutes(Math.floor(t.getMinutes() / 5) * 5, 0, 0);
+  $("date").value = `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
+  $("hh").value = t.getHours(); $("mm").value = t.getMinutes();
+}
+function pickedTime() {
+  const [y, mo, d] = ($("date").value || "").split("-").map(Number);
+  if (!y) return new Date();
+  return new Date(y, mo - 1, d, +$("hh").value, +$("mm").value);
+}
+const hoursAhead = () => (pickedTime() - new Date()) / 3600000;
+const isNow = () => hoursAhead() < 1;                    // 1시간 안 = 지금 (실시간 속도 사용)
+function whenParam() {
+  if (isNow()) return "";
+  const t = pickedTime();
+  return `${t.getFullYear()}-${p2(t.getMonth()+1)}-${p2(t.getDate())} ${p2(t.getHours())}:${p2(t.getMinutes())}`;
+}
+function query() {
+  const q = new URLSearchParams({weather: $("weather").value, road: $("road").value});
+  const w = whenParam(); if (w) q.set("when", w);
+  if (hoursAhead() > 5 / 60) {                           // 5분 넘게 뒤 출발 → 카카오 미래 길찾기용 출발 시각
+    const t = pickedTime();
+    q.set("depart", `${t.getFullYear()}-${p2(t.getMonth()+1)}-${p2(t.getDate())} ${p2(t.getHours())}:${p2(t.getMinutes())}`);
+  }
+  return q.toString();
+}
+function updateTimeLabel() {
+  const live = $("road").querySelector('option[value="실시간"]');
+  let h = hoursAhead();
+  if (h < -0.1) { setNow(); h = 0; }                    // 지난 시각은 지금으로
+  if (h > 72) { alert("출발 시각은 지금부터 72시간(3일) 안에서 골라 주세요."); setNow(); h = 0; }
+  if (isNow()) { $("timeLabel").textContent = "지금 출발"; live.disabled = false; return; }
+  const t = pickedTime(), day = ["일","월","화","수","목","금","토"][t.getDay()];
+  const d = Math.round((new Date(t.toDateString()) - new Date(new Date().toDateString())) / 864e5);
+  $("timeLabel").textContent = `${["오늘","내일","모레","3일 뒤"][d] || d+"일 뒤"} (${day}) ${t.getHours()}:${p2(t.getMinutes())}`;
+  live.disabled = true;                                   // 미래에는 실시간 속도가 없음
+  if ($("road").value === "실시간") $("road").value = "평소";
+}
+
+// ---------- 서울 위험 TOP 10 (목록만, 지도에 칸은 안 그림) ----------
+async function loadRisk() {
+  const r = await (await fetch("/api/risk?" + query())).json();
+  $("top10").innerHTML = r.top10.map(c =>
+    `<li data-lat="${c["위도"]}" data-lng="${c["경도"]}"><span class="badge b-${c["등급"]}">${c["등급"]}</span> ${c["도로"] || c.grid_id}<br><small>${c["이유"][0] || ""}</small></li>`).join("");
+  document.querySelectorAll("#top10 li").forEach(li => li.onclick = () => {
+    const p = new kakao.maps.LatLng(+li.dataset.lat, +li.dataset.lng); map.setLevel(5); map.panTo(p); showCell(p);
+  });
+  $("meta").innerHTML = `기준 시각 ${r["시각"]} · 날씨 ${r["날씨_출처"]} · ${r["속도_출처"]}`;
+  lastRisk = r; drawGrid();
+}
+// ---------- 위험 격자 켜기/끄기 (서울 전체 500m 칸) ----------
+let gridOn = false, gridCoords = null, polys = [], drivePolys = [], lastRisk = null, lastShapeClick = 0;
+async function drawGrid() {
+  polys.forEach(p => p.setMap(null)); polys = [];
+  drivePolys.forEach(p => p.setMap(null)); drivePolys = [];
+  if (!gridOn || !lastRisk) return;
+  if (!gridCoords) {
+    gridCoords = {};
+    const g = await (await fetch("/api/grid")).json();
+    g.features.forEach(f => gridCoords[f.properties.grid_id] = f.geometry.coordinates[0].map(([x, y]) => new kakao.maps.LatLng(y, x)));
+  }
+  if (!gridOn) return;
+  for (const [gid, grade] of Object.entries(lastRisk["등급"])) {
+    if (!gridCoords[gid]) continue;
+    const pg = new kakao.maps.Polygon({ map, path: gridCoords[gid], strokeWeight: 0.5, strokeColor: COLOR[grade], strokeOpacity: 0.6,
+      fillColor: COLOR[grade], fillOpacity: 0.28, zIndex: 0 });
+    kakao.maps.event.addListener(pg, "click", e => { lastShapeClick = Date.now(); showCell(e.latLng); });
+    polys.push(pg);
+    // 길안내 중이면 운전자 시점 지도에도 (경로 선 아래에 옅게)
+    if (driveMap && document.body.classList.contains("navigating"))
+      drivePolys.push(new kakao.maps.Polygon({ map: driveMap, path: gridCoords[gid], strokeWeight: 1, strokeColor: COLOR[grade],
+        strokeOpacity: 0.5, fillColor: COLOR[grade], fillOpacity: 0.2, zIndex: 0 }));
+  }
+}
+function toggleGrid() {
+  gridOn = !gridOn;
+  $("gridBtn").classList.toggle("on", gridOn);
+  $("gridBtn").textContent = gridOn ? "▦ 위험 격자 끄기" : "▦ 위험 격자 켜기";
+  $("navGrid").classList.toggle("on", gridOn);                     // 길안내 화면 아래 바의 버튼도 같이
+  $("navGrid").textContent = gridOn ? "▦ 격자 끄기" : "▦ 격자 켜기";
+  drawGrid();
+}
+async function showCell(latlng) {
+  closePick();
+  const r = await (await fetch(`/api/cell?lat=${latlng.getLat()}&lng=${latlng.getLng()}&` + query())).json();
+  let html;
+  if (!r["서울"]) html = `<div class="info">${r["안내"]}</div>`;
+  else {
+    const rs = [...r["이유"], ...r["오늘"]];
+    html = `<div class="info"><b>${r["도로"] || r.grid_id}</b> <span class="badge b-${r["등급"]}">${r["등급"]}</span><br>` +
+      (r["한마디"] ? `<div style="margin-top:4px">${r["한마디"]}</div>` : "") +
+      (rs.length ? `<ul style="margin:6px 0 0;padding-left:16px">${rs.map(x => `<li>${x}</li>`).join("")}</ul>` : "") + `</div>`;
+  }
+  info.setContent(html); info.setPosition(latlng); info.open(map);
+}
+
+// ---------- 최근 고른 장소 (새로고침해도 남음) ----------
+const RECENT_KEY = "saferoute_recent";
+function recents() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) { return []; } }
+function saveRecent(p) {
+  if (!p || p["이름"] === "내 현재 위치") return;
+  const list = recents().filter(x => !(x["이름"] === p["이름"] && Math.abs(x["위도"] - p["위도"]) < 1e-5));
+  list.unshift(p);
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8))); } catch (e) {}
+}
+function showList(which, list, head) {
+  const box = $("sug" + which);
+  if (!list.length) { box.style.display = "none"; return; }
+  box.innerHTML = (head ? `<div class="head">${head}</div>` : "") +
+    list.map((p, i) => `<div data-i="${i}">${p["이름"]}<small>${p["주소"] || ""}</small></div>`).join("");
+  box.style.display = "block";
+  box.querySelectorAll("div[data-i]").forEach(d => d.onmousedown = e => {
+    e.preventDefault();
+    const p = list[+d.dataset.i]; saveRecent(p); setPlace(which, p["위도"], p["경도"], p["이름"]); box.style.display = "none";
+  });
+}
+
+// ---------- 장소 검색 · GPS ----------
+function bindSearch(which) {
+  const input = $("q" + which), box = $("sug" + which); let timer;
+  const showRecent = () => showList(which, recents(), "최근 고른 장소");
+  input.addEventListener("focus", () => { if (!input.value.trim() || place[which]) { input.select(); showRecent(); } });
+  input.addEventListener("blur", () => setTimeout(() => box.style.display = "none", 150));
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const q = input.value.trim(); if (!q) { showRecent(); return; }
+      const list = await (await fetch("/api/search?q=" + encodeURIComponent(q))).json();
+      showList(which, Array.isArray(list) ? list : [], "");
+    }, 250);
+  });
+}
+function setPlace(which, lat, lng, name, auto = true) {
+  place[which] = {lat, lng}; $("q" + which).value = name;
+  const pos = new kakao.maps.LatLng(lat, lng);
+  if (marks[which]) marks[which].setMap(null);
+  marks[which] = new kakao.maps.CustomOverlay({ map, position: pos, yAnchor: 1, zIndex: 8,
+    content: `<div class="rlabel" style="border-color:${which === "O" ? "#3ddc84" : "#ff7a1a"}">${which === "O" ? "출발" : "도착"}</div>` });
+  if (place.O && place.D && auto) findRoutes();            // 둘 다 정해지면 바로 경로 찾기
+  else map.panTo(pos);
+}
+// 내 위치: 실패하면 알림창 대신 입력칸 아래에 이유와 해결 방법을 보여 줌
+function gpsMsg(html, ok) { const m = $("gpsMsg"); m.innerHTML = html; m.className = "gpsmsg" + (ok ? " ok" : ""); m.style.display = html ? "block" : "none"; }
+function myLocation(silent) {
+  if (!navigator.geolocation) { if (!silent) gpsMsg("이 브라우저는 위치 기능을 지원하지 않아요."); return; }
+  if (!silent) { $("gps").textContent = "📍 찾는 중…"; gpsMsg(""); }
+  const done = () => $("gps").textContent = "📍 내 위치";
+  navigator.geolocation.getCurrentPosition(
+    p => { done(); gpsMsg(""); setPlace("O", p.coords.latitude, p.coords.longitude, "내 현재 위치"); },
+    e => {
+      done(); if (silent) return;
+      const why = {
+        1: "위치 권한이 꺼져 있어요.<br>· 주소창 왼쪽 아이콘(ⓘ/🔒) → <b>위치 → 허용</b> 후 새로고침<br>· Mac이면 <b>시스템 설정 → 개인정보 보호 및 보안 → 위치 서비스</b>에서 브라우저(Chrome 등)를 켜 주세요",
+        2: "위치를 찾지 못했어요. 와이파이를 켜고 다시 눌러 주세요.",
+        3: "위치를 찾는 데 시간이 너무 걸렸어요. 다시 눌러 주세요."}[e.code] || e.message;
+      gpsMsg(why + "<br>그동안은 출발지를 검색하거나 지도를 눌러서 골라 주세요.");
+    },
+    {enableHighAccuracy: false, timeout: 15000, maximumAge: 60000});
+}
+$("gps").onclick = () => myLocation(false);
+
+// ---------- 지도를 눌러 출발·도착 고르기 ----------
+let pickBox = null, geocoder = null;
+function closePick() { if (pickBox) pickBox.setMap(null); }
+function openPick(latlng) {
+  if (info) info.close();
+  const lat = latlng.getLat(), lng = latlng.getLng();
+  window._pick = {lat, lng, name: "지도에서 고른 곳", addr: ""};
+  const draw = () => pickBox.setContent(`<div class="pick"><span class="x" onclick="closePick()">✕</span>
+      <div class="ad">${_pick.name}${_pick.addr && _pick.addr !== _pick.name ? `<br><small style="color:var(--sub);font-weight:500">${_pick.addr}</small>` : ""}</div>
+      <div class="bt"><button class="o" onclick="usePick('O')">출발지로</button><button class="d" onclick="usePick('D')">도착지로</button></div></div>`);
+  if (!pickBox) pickBox = new kakao.maps.CustomOverlay({ yAnchor: 1, zIndex: 25, clickable: true });
+  pickBox.setPosition(latlng); draw(); pickBox.setMap(map);
+  if (geocoder) geocoder.coord2Address(lng, lat, (res, st) => {
+    if (st !== kakao.maps.services.Status.OK || !res[0]) return;
+    const a = res[0].road_address, b = res[0].address;
+    _pick.name = (a && a.building_name) || (a ? a.address_name : b.address_name); _pick.addr = b ? b.address_name : "";
+    draw();
+  });
+}
+function usePick(which) {
+  const p = window._pick; closePick();
+  saveRecent({"이름": p.name, "주소": p.addr, "위도": p.lat, "경도": p.lng});
+  setPlace(which, p.lat, p.lng, p.name);
+}
+
+// ---------- 경로 (고른 경로만 색, 나머지는 회색) ----------
+async function findRoutes() {
+  if (!place.O || !place.D) return alert("출발지와 도착지를 골라 주세요. (검색하거나 지도를 눌러서 고를 수 있어요)");
+  if (Math.abs(place.O.lat - place.D.lat) < 2e-4 && Math.abs(place.O.lng - place.D.lng) < 2e-4)
+    return alert("출발지와 도착지가 같아요. 다른 곳을 골라 주세요.");
+  loading(true); closePick(); if (info) info.close();
+  try {
+    const resp = await fetch(`/api/routes?o=${place.O.lng},${place.O.lat}&d=${place.D.lng},${place.D.lat}&` + query());
+    if (!resp.ok) { alert("경로를 찾지 못했어요. 출발지·도착지를 다시 골라 주세요."); return; }
+    const r = await resp.json();
+    routeObjs.forEach(o => o.line.setMap(null) || o.label.setMap(null)); routeObjs = [];
+    clearSegs(); cellMarkers.forEach(m => m.setMap(null)); cellMarkers = [];
+    routeData = r["경로"] || [];
+    if (!routeData.length) { $("routes").innerHTML = `<p>${r["안내"]}</p>`; return; }
+    const bounds = new kakao.maps.LatLngBounds();
+    routeData.forEach((rt, i) => {
+      const path = rt["선"].map(([la, ln]) => new kakao.maps.LatLng(la, ln));
+      path.forEach(p => bounds.extend(p));
+      const line = new kakao.maps.Polyline({ map, path, strokeWeight: 6, strokeColor: GRAY, strokeOpacity: 0.8 });
+      kakao.maps.event.addListener(line, "click", () => selectRoute(i));
+      const mid = path[Math.floor(path.length * (0.35 + 0.15 * i))];
+      const label = new kakao.maps.CustomOverlay({ map, position: mid, yAnchor: 1.3, clickable: true,
+        content: `<div class="rlabel" id="rl${i}" onclick="selectRoute(${i})">${i + 1} · ${rt["시간_분"]}분 · <span class="badge b-${rt["등급"]}">${rt["등급"]}</span></div>` });
+      routeObjs.push({line, label, path});
+    });
+    map.setBounds(bounds, 60, 60, 60, 60);
+    $("routes").dataset.src = `🧭 ${r["길찾기_기준"] || ""}<br>위험 계산: ${r["날씨_출처"]} · ${r["속도_출처"]}`;
+    const best = routeData.findIndex(x => x["가장안전"]);
+    selectRoute(best >= 0 ? best : 0);
+  } finally { loading(false); }
+}
+function clearSegs() { segObjs.forEach(o => o.setMap(null)); segObjs = []; }
+function drawSegs(i) {                       // 고른 경로 위의 위험 구간을 도로 위 색 선으로
+  clearSegs();
+  (routeData[i]["위험_구간"] || []).forEach(sg => {
+    const pl = new kakao.maps.Polyline({ map, path: sg["선"].map(([la, ln]) => new kakao.maps.LatLng(la, ln)),
+      strokeWeight: 8, strokeColor: COLOR[sg["등급"]], strokeOpacity: 1, zIndex: 6 });
+    kakao.maps.event.addListener(pl, "click", e => { lastShapeClick = Date.now(); showCell(e.latLng); });
+    segObjs.push(pl);
+  });
+}
+// ---------- 단속카메라 ----------
+let camMarkers = [];
+const CAM_TALK = {"과속": "과속 단속 카메라", "신호": "신호 단속 카메라", "구간단속 시작": "구간 단속 시작 지점", "구간단속 끝": "구간 단속 끝 지점"};
+function camSummary(cams) {
+  const n = {}; cams.forEach(c => n[c["종류"]] = (n[c["종류"]] || 0) + 1);
+  const parts = ["과속", "신호", "구간단속 시작", "주정차"].filter(k => n[k])
+    .map(k => `${k === "구간단속 시작" ? "구간단속" : k} ${n[k]}`);
+  return parts.length ? "📷 " + parts.join(" · ") : "📷 경로 위 단속카메라 없음";
+}
+function drawCameras(cams, zones = []) {
+  camMarkers.forEach(m => m.setMap(null)); camMarkers = [];
+  zones.forEach(z => {
+    const pos = new kakao.maps.LatLng(z["위도"], z["경도"]);
+    camMarkers.push(new kakao.maps.Circle({ map, center: pos, radius: 300, strokeWeight: 1, strokeColor: "#f9a825",
+      strokeOpacity: 0.7, fillColor: "#ffeb3b", fillOpacity: 0.12 }));
+    camMarkers.push(new kakao.maps.CustomOverlay({ map, position: pos, zIndex: 3,
+      content: `<div class="zone" title="${z["이름"]} (${z["시설"]})">🧒30</div>` }));
+  });
+  cams.forEach(c => camMarkers.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(c["위도"], c["경도"]), zIndex: 4,
+    content: `<div class="cam ${c["종류"]}" title="${c["장소"] || ""}">📷${c["종류"] === "주정차" ? "P" : (c["제한속도"] || "")}</div>` })));
+}
+function selectRoute(i) {
+  selIdx = i;
+  routeObjs.forEach((o, k) => {
+    o.line.setOptions({ strokeColor: k === i ? ACTIVE : GRAY, strokeWeight: k === i ? 8 : 5, strokeOpacity: k === i ? 1 : 0.7 });
+    o.line.setZIndex(k === i ? 5 : 1); o.label.setZIndex(k === i ? 7 : 2);
+    const el = $("rl" + k); if (el) { el.classList.toggle("off", k !== i); el.style.borderColor = k === i ? ACTIVE : GRAY; }
+  });
+  drawSegs(i);
+  const rt = routeData[i];
+  drawCameras(rt["카메라"] || [], rt["보호구역"] || []);
+  cellMarkers.forEach(m => m.setMap(null)); cellMarkers = [];
+  const risky = rt["위험_칸"];
+  $("routes").innerHTML = `<h2><span class="n">3</span>고른 경로</h2>
+    <div class="card sel">
+      <div class="t"><span style="color:${ACTIVE}">● 경로 ${i + 1}</span> <span class="badge b-${rt["등급"]}">위험 ${rt["등급"]}</span></div>
+      <div class="m">${rt["시간_분"]}분 · ${rt["거리_km"]}km · ${rt["이름"]}</div>
+      <div class="camsum">${camSummary(rt["카메라"] || [])}</div>
+      <div class="camsum">🧒 ${(rt["보호구역"] || []).length ? `어린이보호구역 근처 시설 ${rt["보호구역"].length}곳` : "어린이보호구역 없음"}</div>
+      ${rt["가장안전"] ? `<div class="safe">✔ 가장 안전한 경로</div>` : ""}
+      ${risky.length
+        ? `<div style="font-size:13px;margin-top:8px;color:#ff6b6b;font-weight:800">⚠ 위험 높은 구간 ${risky.length}곳</div>` +
+          `<ul class="warn">${risky.slice(0, 6).map(c => `<li><b>${c["도로"] || c.grid_id}</b> — ${causesFor(c, new Set(rt["고속_칸"] || []))[0] || ""}</li>`).join("")}</ul>`
+        : `<div class="safe">위험 높은 구간이 없어요</div>`}
+      <button class="navbtn" onclick="startNav(${i})">▶ 경로 안내 시작</button>
+    </div>
+    ${routeData.length > 1 ? `<p class="routepick">다른 경로 ${routeData.length - 1}개는 지도에 회색으로 보여요. 회색 선이나 번호를 누르면 그 경로로 바뀌어요.</p>` : ""}
+    <div class="meta">${$("routes").dataset.src || ""}</div>`;
+}
+// 음성·경고에는 원인만 (최근 3년간·지난해 같은 기간 이야기와 괄호 속 숫자는 빼고)
+const plain = t => (t || "").replace(/\s*\(.*?\)/g, "").replace("[오늘] ", "");
+function causesFor(c, fast) {        // 그 칸에서 말할 원인 (최대 2개). 고속·고가 구간이면 '유동인구'는 빼요
+  let list = causeOnly(c && c["이유"]);
+  if (fast && c && fast.has(c.grid_id)) list = list.filter(t => !t.includes("유동인구"));
+  return list.slice(0, 2);
+}
+function causeOnly(list) {
+  return (list || []).filter(t => !/최근\s*\d+\s*년|지난\s*\d*\s*년|작년|년간|개월/.test(t)).map(plain).filter(Boolean);
+}
+
+// ---------- 길안내 (네비게이션) ----------
+// 카카오가 준 안내 지점(우회전 등)과 경로 선을 이용해, 차 위치에서 다음 안내까지 남은 거리를 계산하고
+// 500m·150m 앞에서 화면과 음성으로 안내. 위험 '높음' 칸은 300m 앞에서 따로 경고.
+let nav = null, navTimer = null, gpsWatch = null, voiceOn = true;
+const EARTH = 6371000, rad = d => d * Math.PI / 180;
+function hav(a, b) {
+  const dLat = rad(b[0] - a[0]), dLng = rad(b[1] - a[1]);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH * Math.asin(Math.sqrt(s));
+}
+function nearest(pts, lat, lng, from = 0, to = pts.length) {
+  let best = from, bd = Infinity;
+  for (let i = from; i < to; i++) { const d = hav([lat, lng], pts[i]); if (d < bd) { bd = d; best = i; } }
+  return {i: best, d: bd};
+}
+function prepRoute(rt) {
+  const pts = rt["선"], cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hav(pts[i - 1], pts[i]));
+  let last = 0;
+  const guides = (rt["안내"] || []).map(g => { const n = nearest(pts, g.y, g.x, last); last = n.i; return {...g, s: cum[n.i]}; })
+    .filter(g => g.type !== 100);                                              // 100 = 출발지
+  const risks = rt["위험_칸"].map(c => ({...c, s: cum[nearest(pts, c["위도"], c["경도"]).i]})).sort((a, b) => a.s - b.s);
+  const cams = (rt["카메라"] || []).filter(c => c["종류"] !== "주정차")          // 주정차 카메라는 지도에만
+    .map(c => ({...c, s: cum[nearest(pts, c["위도"], c["경도"]).i]})).sort((a, b) => a.s - b.s);
+  // 어린이보호구역: 시설에서 가장 가까운 경로 지점 ±200m 를 구간으로 보고, 겹치는 구간은 합침
+  const zs = (rt["보호구역"] || []).map(z => ({...z, s: cum[nearest(pts, z["위도"], z["경도"]).i]})).sort((a, b) => a.s - b.s);
+  const zones = [];
+  zs.forEach(z => {
+    const a = Math.max(0, z.s - 200), b = z.s + 200, last = zones[zones.length - 1];
+    if (last && a <= last.b) { last.b = Math.max(last.b, b); last.names.push(z["이름"]); }
+    else zones.push({a, b, names: [z["이름"]], lim: z["제한속도"] || 30});
+  });
+  // 칸별 도로 제한속도: 칸 중심이 경로 어디쯤인지(s) 계산 → 지금 위치의 제한속도를 표지판에 늘 표시
+  let li = 0;
+  const limits = (rt["칸_제한속도"] || []).map(([gid, la, ln, lim]) => { const n = nearest(pts, la, ln, li); li = n.i; return {s: cum[n.i], lim}; })
+    .filter(x => x.lim);
+  // 실제로 지나는 도로 구간의 제한속도 (바뀌는 지점 s 순서) — 있으면 칸 평균보다 먼저 씀
+  let ri = 0;
+  const roadLims = (rt["도로_제한속도"] || []).map(([la, ln, lim]) => { const n = nearest(pts, la, ln, ri); ri = n.i; return {s: cum[n.i], lim}; });
+  const r = {pts, cum, total: cum[cum.length - 1], guides, risks, cams, zones, limits, roadLims, sec: rt["시간_분"] * 60};
+  buildRisk(r, rt);
+  return r;
+}
+// 위험 구간(빨강·노랑 선)이 경로 어디서 시작·끝나는지(a~b) + 칸별 이유
+function buildRisk(r, rt) {
+  let k = 0;
+  r.segs = (rt["위험_구간"] || []).map(g => {
+    const f = g["선"][0], l = g["선"][g["선"].length - 1];
+    const a = nearest(r.pts, f[0], f[1], k); k = a.i;
+    const b = nearest(r.pts, l[0], l[1], k);
+    return {등급: g["등급"], grid_id: g.grid_id, a: r.cum[a.i], b: r.cum[b.i]};
+  }).sort((x, y) => x.a - y.a);
+  r.cell = {};
+  [...(rt["보통_칸"] || []), ...(rt["위험_칸"] || [])].forEach(c => r.cell[c.grid_id] = c);
+}
+function posAt(r, s) {
+  s = Math.max(0, Math.min(s, r.total));
+  let lo = 0, hi = r.cum.length - 1;
+  while (lo < hi - 1) { const m = (lo + hi) >> 1; if (r.cum[m] <= s) lo = m; else hi = m; }
+  const a = r.pts[lo], b = r.pts[hi], seg = r.cum[hi] - r.cum[lo] || 1, t = (s - r.cum[lo]) / seg;
+  const head = Math.atan2(rad(b[1] - a[1]) * Math.cos(rad(a[0])), rad(b[0] - a[0])) * 180 / Math.PI;
+  return {lat: a[0] + (b[0] - a[0]) * t, lng: a[1] + (b[1] - a[1]) * t, head, idx: lo};
+}
+const fmtDist = m => m >= 1000 ? (m / 1000).toFixed(1) + "km" : Math.max(0, Math.round(m / 10) * 10) + "m";
+const sayDist = m => m >= 1000 ? (m / 1000).toFixed(1).replace(".0", "") + "킬로미터" : Math.round(m / 50) * 50 + "미터";
+function turnIcon(g) {
+  const t = g["안내"] || "";
+  if (g.type === 101 || t.includes("도착")) return "🏁";
+  if (/유턴|U턴/.test(t)) return "↩️";
+  if (t.includes("좌회전")) return "⬅️";
+  if (t.includes("우회전")) return "➡️";
+  if (t.includes("왼쪽")) return "↖️";
+  if (t.includes("오른쪽")) return "↗️";
+  if (t.includes("톨게이트")) return "🎫";
+  return "⬆️";
+}
+// 음성 대기열: 말하던 문장은 절대 끊지 않고, 끝나면 다음 문장을 말함
+//  - urgent(바로 앞 회전 등)는 대기열 맨 앞으로 → 지금 문장이 끝나자마자 나옴
+//  - 기다리다 너무 늦어진 안내(기본 8초)는 버림 → 이미 지나간 지점을 뒤늦게 말하지 않음
+//  - 두 문장 이상이면 문장마다 따로 말하고, 문장 사이를 1초 쉼
+let voiceQueue = [], speaking = false, voiceGen = 0;
+function say(text, urgent = false, ttlSec = 8) {
+  if (!voiceOn || !window.speechSynthesis) return;
+  const parts = text.split(/(?<=[.!?])\s+/).map(t => t.trim()).filter(Boolean);
+  const until = Date.now() + (ttlSec + parts.length * 3) * 1000;
+  const items = parts.map((t, k) => ({text: t, until, gap: k > 0}));
+  if (urgent) voiceQueue.unshift(...items); else voiceQueue.push(...items);
+  playNext();
+}
+function playNext() {
+  if (speaking) return;
+  voiceQueue = voiceQueue.filter(v => v.until > Date.now());
+  const item = voiceQueue.shift();
+  if (!item) return;
+  speaking = true;
+  const gen = voiceGen;
+  const go = () => {
+    if (gen !== voiceGen) return;                      // 그사이 안내가 끝남
+    const u = new SpeechSynthesisUtterance(item.text); u.lang = "ko-KR"; u.rate = 1.1;
+    u.onend = u.onerror = () => { if (gen !== voiceGen) return; speaking = false; playNext(); };
+    speechSynthesis.speak(u);
+  };
+  if (item.gap) setTimeout(go, 1000); else go();       // 같은 안내의 다음 문장은 1초 쉬고
+}
+function clearVoice() { voiceGen++; voiceQueue = []; speaking = false; if (window.speechSynthesis) speechSynthesis.cancel(); }
+function startNav(i) {
+  stopNav(true, true);                       // 재탐색 안내 등 하던 말은 끊지 않음
+  selectRoute(i); if (info) info.close();
+  const rt = routeData[i], r = prepRoute(rt);
+  nav = {r, i, rt, s: 0, paused: false, said: new Set(), off: 0, kmh: r.total / r.sec * 3.6,
+         fast: new Set(rt["고속_칸"] || []), departAt: hoursAhead() > 5 / 60 ? pickedTime() : null};
+  $("hud").style.display = "block"; $("navBottom").style.display = "flex";
+  const p0 = posAt(r, 0);
+  nav.car = new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(p0.lat, p0.lng), zIndex: 10,
+    content: `<div id="carEl" style="width:30px;height:30px;border-radius:50%;background:#ff7a1a;border:3px solid #fff;
+      box-shadow:0 1px 6px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px">▲</div>` });
+  // 화면 전환: 왼쪽 큰 화면 = 운전자 시점, 오른쪽 위 = 위에서 본 전체 지도(경로 전체가 보이게)
+  document.body.classList.add("navigating");
+  map.relayout();
+  const bounds = new kakao.maps.LatLngBounds(); rt["선"].forEach(([la, ln]) => bounds.extend(new kakao.maps.LatLng(la, ln)));
+  map.setBounds(bounds, 20, 20, 20, 20);
+  setupDriveMap(rt, r, p0);
+  // 아래쪽 바의 날씨·막힘을 지금 설정으로 맞춤 (미래 시각이면 '실시간'은 고를 수 없음)
+  $("navWeather").value = $("weather").value; $("navRoad").value = $("road").value;
+  $("navRoad").querySelector('option[value="실시간"]').disabled = !isNow();
+  say("경로 안내를 시작합니다.");          // 시작 말은 짧게 (길면 첫 안내가 밀림)
+  if ($("navMode").value === "gps") startGps();
+  navTimer = setInterval(tick, 200);
+  updateNav();
+}
+function stopNav(silent, keepVoice = false) {
+  clearInterval(navTimer); navTimer = null;
+  if (gpsWatch !== null) { navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; }
+  if (nav && nav.car) nav.car.setMap(null);
+  nav = null;
+  $("hud").style.display = "none"; $("navBottom").style.display = "none";
+  driveObjs.forEach(o => o.setMap(null)); driveObjs = [];
+  driveRiskObjs.forEach(o => o.setMap(null)); driveRiskObjs = [];
+  document.body.classList.remove("navigating");           // 원래 화면으로
+  drivePolys.forEach(p => p.setMap(null)); drivePolys = [];
+  if (map) map.relayout();
+  if (!keepVoice) clearVoice();
+  if (!silent) say("안내를 종료합니다.");
+}
+function tick() {
+  if (!nav || nav.paused) return;
+  if ($("navMode").value === "sim") {
+    // 시뮬레이션 속도: 평소 50km/h, 어린이보호구역 안에서는 30km/h 로 줄임
+    const inZone = nav.r.zones.some(z => nav.s >= z.a && nav.s <= z.b);
+    nav.simKmh = inZone ? 30 : 50;
+    nav.s += nav.simKmh / 3.6 * (+$("navSpeed").value) * 0.2;
+  }
+  updateNav();
+}
+// ---------- 운전자 시점 지도 ----------
+let driveMap = null, driveObjs = [];
+function setupDriveMap(rt, r, p0) {
+  const c = new kakao.maps.LatLng(p0.lat, p0.lng);
+  if (!driveMap) {
+    driveMap = new kakao.maps.Map($("driveMap"), { center: c, level: 2, draggable: false, scrollwheel: false,
+      disableDoubleClickZoom: true, keyboardShortcuts: false });
+  } else { driveMap.relayout(); driveMap.setCenter(c); driveMap.setLevel(2); }
+  driveMap.setMapTypeId(kakao.maps.MapTypeId[$("mapType").value]);
+  const path = rt["선"].map(([la, ln]) => new kakao.maps.LatLng(la, ln));
+  // 경로는 굵은 파란 선, 그 위에 위험 구간(높음 빨강·보통 노랑)을 도로 폭으로 덧그림
+  driveObjs.push(new kakao.maps.Polyline({ map: driveMap, path, strokeWeight: 16, strokeColor: "#ffffff", strokeOpacity: 0.9, zIndex: 1 }));
+  driveObjs.push(new kakao.maps.Polyline({ map: driveMap, path, strokeWeight: 11, strokeColor: ACTIVE, strokeOpacity: 0.95, zIndex: 2 }));
+  drawDriveRisks(r);
+  r.cams.forEach(cm => driveObjs.push(new kakao.maps.CustomOverlay({ map: driveMap, position: new kakao.maps.LatLng(cm["위도"], cm["경도"]),
+    content: `<div class="cam">📷${cm["제한속도"] || ""}</div>` })));
+  (rt["보호구역"] || []).forEach(z => driveObjs.push(new kakao.maps.CustomOverlay({ map: driveMap,
+    position: new kakao.maps.LatLng(z["위도"], z["경도"]), content: `<div class="zone">🧒30</div>` })));
+  nav.rot = -p0.head;
+  if (gridOn) drawGrid();                                     // 격자를 켜 둔 채로 안내를 시작하면 운전자 시점에도 보이게
+}
+let driveRiskObjs = [];
+function drawDriveRisks(r) {             // 운전자 시점 지도의 위험 구간 (날씨·막힘 바꾸면 다시 그림)
+  driveRiskObjs.forEach(o => o.setMap(null)); driveRiskObjs = [];
+  if (!driveMap || !nav) return;
+  (nav.rt["위험_구간"] || []).forEach(sg => driveRiskObjs.push(new kakao.maps.Polyline({ map: driveMap,
+    path: sg["선"].map(([la, ln]) => new kakao.maps.LatLng(la, ln)), strokeWeight: 11, strokeColor: COLOR[sg["등급"]],
+    strokeOpacity: 1, zIndex: 3 })));
+}
+function updateDrive(p) {
+  if (!driveMap) return;
+  driveMap.setCenter(new kakao.maps.LatLng(p.lat, p.lng));
+  // 진행 방향이 화면 위로 오게 지도를 돌림 (359°→0° 처럼 넘어갈 때 한 바퀴 돌지 않게 가까운 쪽으로)
+  let target = -p.head, diff = ((target - nav.rot) % 360 + 540) % 360 - 180;
+  if (Math.abs(diff) > 0.5) nav.rot += diff;
+  $("driveRot").style.transform = `translate(-50%,-50%) rotateX(48deg) rotate(${nav.rot}deg)`;
+}
+
+function updateNav() {
+  const r = nav.r, s = nav.s, p = posAt(r, s), pos = new kakao.maps.LatLng(p.lat, p.lng);
+  nav.car.setPosition(pos);                                   // 오른쪽 위 전체 지도: 경로 전체를 보여 주고 차만 움직임
+  const el = document.getElementById("carEl"); if (el) el.style.transform = `rotate(${p.head}deg)`;
+  updateDrive(p);                                             // 왼쪽 큰 화면: 차를 따라가며 진행 방향이 위
+
+  // 다음 안내 지점 + 그다음 안내
+  const gi = r.guides.findIndex(x => x.s > s + 3), g = r.guides[gi], g2 = r.guides[gi + 1];
+  const nt = $("nextTurn");
+  if (g2 && g2.type !== 101 && g2.s - g.s <= 800) {
+    nt.style.display = "block"; nt.textContent = `그다음 ${turnIcon(g2)} ${fmtDist(g2.s - g.s)} 후 ${g2["안내"]}`;
+  } else nt.style.display = "none";
+  if (g) {
+    const d = g.s - s;
+    $("turnIcon").textContent = turnIcon(g); $("turnDist").textContent = fmtDist(d);
+    $("turnText").textContent = g["안내"] + (g["이름"] && !g["안내"].includes(g["이름"]) ? ` (${g["이름"]})` : "");
+    const key = `${g.s}`;
+    if (d <= 520 && d > 200 && !nav.said.has(key + "a")) { nav.said.add(key + "a"); say(`${sayDist(d)} 앞에서 ${g["안내"]}입니다.`); }
+    if (d <= 150 && !nav.said.has(key + "b")) { nav.said.add(key + "b"); nav.said.add(key + "a");
+      say(g.type === 101 ? "잠시 후 목적지에 도착합니다." : `잠시 후 ${g["안내"]}입니다.`, true); }
+  }
+
+  // 위험 구간 (지도 위 빨강·노랑 선과 같은 위치)
+  //  - 높음(빨강): 300m 앞에서 음성 + 화면 카드. 카드 내용 = 음성 내용 (원인 최대 2개)
+  //  - 보통(노랑): 화면 카드만 (음성 없음)
+  const bar = $("riskBar"), whyOf = g => causesFor(r.cell[g.grid_id], nav.fast);
+  const showBar = (cls, title, why) => {
+    bar.className = cls; bar.style.display = "block";
+    bar.innerHTML = `<div>${title}</div>` + (why.length ? `<div class="why">${why.map(x => "· " + x).join("<br>")}</div>` : "");
+  };
+  const here = r.segs.find(g => s >= g.a - 5 && s <= g.b + 5);
+  const inHigh = here && here["등급"] === "높음" ? here : r.segs.find(g => g["등급"] === "높음" && s >= g.a - 5 && s <= g.b + 5);
+  const ahead = r.segs.find(g => g["등급"] === "높음" && g.a > s && g.a - s <= 300);
+  if (inHigh) {
+    const why = whyOf(inHigh);
+    // 빨간 구간이 이어지다가 원인이 바뀌면 바뀐 원인을 다시 말함 (같으면 조용히)
+    if (!nav.said.has("r" + inHigh.grid_id)) {
+      nav.said.add("r" + inHigh.grid_id);
+      // 처음 들어온 빨간 구간(예: 출발하자마자)이면 "구간이에요", 빨간 구간이 이어지다 원인이 바뀌면 "이어져요"
+      const first = nav.lastWhy == null;
+      if (why.join() !== nav.lastWhy) say([first ? "사고 위험이 높은 구간이에요." : "사고 위험이 높은 구간이 이어져요.", ...why.map(x => x + ".")].join(" "));
+    }
+    nav.lastWhy = why.join();
+    showBar("높음", "⚠ 사고 위험 높은 구간", why);
+  } else if (ahead) {
+    const why = whyOf(ahead);
+    if (!nav.said.has("r" + ahead.grid_id)) {
+      nav.said.add("r" + ahead.grid_id); nav.lastWhy = why.join();
+      say(["300미터 앞, 사고 위험이 높은 구간이에요.", ...why.map(x => x + ".")].join(" "));
+    }
+    showBar("높음", `⚠ ${fmtDist(ahead.a - s)} 앞 사고 위험 높은 구간`, why);
+  } else if (here && here["등급"] === "보통") {
+    nav.lastWhy = null;
+    showBar("보통", "주의 · 사고 위험 보통 구간", whyOf(here));                 // 노랑: 화면에만
+  } else { nav.lastWhy = null; bar.style.display = "none"; }
+
+  // 단속카메라: 300m 앞 음성, 500m 안이면 화면에 제한속도 표시
+  const cam = r.cams.find(c => c.s > s - 5 && c.s - s <= 500);
+  const cb = $("camBar");
+  if (cam) {
+    const d = Math.max(0, cam.s - s), lim = cam["제한속도"];
+    cb.style.display = "block";
+    cb.innerHTML = `${lim ? `<span class="lim">${lim}</span>` : "📷 "}${fmtDist(d)} 앞 ${CAM_TALK[cam["종류"]] || "단속 카메라"}`;
+    const key = "c" + cam.s;
+    if (d <= 320 && !nav.said.has(key)) {
+      nav.said.add(key);
+      say(cam["종류"] === "구간단속 끝" ? "곧 구간 단속이 끝납니다."
+        : `${sayDist(d)} 앞, ${CAM_TALK[cam["종류"]] || "단속 카메라"}가 있어요.` + (lim ? ` 제한속도 ${lim}킬로미터입니다.` : ""));
+    }
+  } else cb.style.display = "none";
+
+  // 어린이보호구역: 300m 앞 음성, 구간 안이면 노란 띠 + 30km/h, 나가면 음성
+  const zb = $("zoneBar"), zin = r.zones.find(z => s >= z.a && s <= z.b), znext = r.zones.find(z => z.a > s && z.a - s <= 300);
+  if (zin) {
+    zb.style.display = "block";
+    zb.innerHTML = `<span class="lim">${zin.lim}</span>🧒 어린이보호구역 · ${zin.names[0]}${zin.names.length > 1 ? ` 외 ${zin.names.length - 1}곳` : ""}`;
+    nav.zoneIn = zin;
+  } else if (znext) {
+    zb.style.display = "block";
+    zb.innerHTML = `<span class="lim">${znext.lim}</span>🧒 ${fmtDist(znext.a - s)} 앞 어린이보호구역`;
+  } else zb.style.display = "none";
+  if (znext && !nav.said.has("z" + znext.a)) {
+    nav.said.add("z" + znext.a);
+    say(`${sayDist(znext.a - s)} 앞, 어린이보호구역이에요. 시속 ${znext.lim}킬로미터로 줄이세요.`);
+  }
+  if (!zin && nav.zoneIn) { if (!nav.said.has("zx" + nav.zoneIn.b)) { nav.said.add("zx" + nav.zoneIn.b); say("어린이보호구역이 끝났어요."); } nav.zoneIn = null; }
+
+  // 제한속도 표지판 (왼쪽 아래, 늘 표시) — 보이는 순서:
+  //   1) 단속카메라가 500m 안 = 카메라 제한속도 + 남은 거리
+  //   2) 카메라가 없으면 어린이보호구역 (안 = 30, 앞 = 30 + 남은 거리)
+  //   3) 둘 다 없으면 지금 도로의 제한속도
+  const ls = $("limitSign");
+  let lim = null, dd = 0;
+  if (cam && cam["제한속도"]) { lim = cam["제한속도"]; dd = Math.max(0, cam.s - s); }
+  else if (zin) lim = zin.lim;
+  else if (znext) { lim = znext.lim; dd = znext.a - s; }
+  if (!lim && r.roadLims.length && r.roadLims[0].s <= s + 50) { // 지금 달리는 도로 구간의 제한속도
+    let cur = r.roadLims[0];
+    for (const x of r.roadLims) { if (x.s <= s) cur = x; else break; }
+    lim = cur.lim; nav.lastLim = lim;
+  }
+  if (!lim && r.limits.length) {                               // (도로 정보 없을 때) 지금 위치에 가장 가까운 칸의 평균 제한속도
+    let best = r.limits[0];
+    for (const x of r.limits) { if (Math.abs(x.s - s) < Math.abs(best.s - s)) best = x; }
+    lim = best.lim; nav.lastLim = lim;
+  }
+  lim = lim || nav.lastLim;
+  if (lim) { ls.style.display = "block"; ls.innerHTML = `${lim}${dd > 0 ? `<small>${fmtDist(dd)}</small>` : ""}`; }
+  else ls.style.display = "none";
+
+  // 남은 거리·시간
+  const left = Math.max(0, r.total - s), secLeft = left / r.total * r.sec;
+  // 도착 예정: 미래 출발이면 고른 출발 시각 + 경로 소요시간, 지금 출발이면 지금 + 남은 시간
+  const hm = d => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const eta = nav.departAt ? new Date(nav.departAt.getTime() + r.sec * 1000) : new Date(Date.now() + secLeft * 1000);
+  $("remain").textContent = `${fmtDist(left)} · ${Math.max(1, Math.round(secLeft / 60))}분`;
+  $("eta").textContent = nav.departAt ? `${hm(nav.departAt)} 출발 → 도착 예정 ${hm(eta)}` : `도착 예정 ${hm(eta)}`;
+  $("spd").textContent = $("navMode").value === "sim" ? `${nav.simKmh || 50}km/h` : (nav.gpsKmh != null ? `${Math.round(nav.gpsKmh)}km/h` : "-");
+
+  if (left <= 10) { stopNav(true); say("목적지에 도착했습니다. 안내를 종료합니다."); }   // 종료(대기열 비우기) 뒤에 말해야 안 끊김
+}
+function startGps() {
+  if (!navigator.geolocation) { alert("이 브라우저는 위치 기능을 지원하지 않아요."); $("navMode").value = "sim"; return; }
+  gpsWatch = navigator.geolocation.watchPosition(async p => {
+    if (!nav) return;
+    const {latitude: lat, longitude: lng, speed} = p.coords;
+    nav.gpsKmh = speed != null ? speed * 3.6 : null;
+    const cur = posAt(nav.r, nav.s).idx;
+    const n = nearest(nav.r.pts, lat, lng, Math.max(0, cur - 30), Math.min(nav.r.pts.length, cur + 400));
+    if (n.d > 60) {                                           // 경로에서 60m 넘게 벗어남
+      if (++nav.off >= 3) {                                   // 3번 연속이면 재탐색
+        stopNav(true); say("경로를 벗어났어요. 경로를 다시 찾을게요.");   // 종료 뒤에 말해야 안 끊김
+        setPlace("O", lat, lng, "내 현재 위치", false);
+        await findRoutes(); if (routeData.length) { $("navMode").value = "gps"; startNav(0); }
+      }
+      return;
+    }
+    nav.off = 0; nav.s = Math.max(nav.s, nav.r.cum[n.i]); updateNav();
+  }, e => alert("위치를 가져오지 못했어요: " + e.message), {enableHighAccuracy: true, maximumAge: 1000, timeout: 15000});
+}
+$("navPause").onclick = () => { if (!nav) return; nav.paused = !nav.paused; $("navPause").textContent = nav.paused ? "▶ 계속" : "⏸ 일시정지"; };
+$("navVoice").onclick = () => { voiceOn = !voiceOn; $("navVoice").textContent = voiceOn ? "🔊 음성 켜짐" : "🔇 음성 꺼짐"; if (!voiceOn) clearVoice(); };
+$("navStop").onclick = () => stopNav(false);
+$("navMode").onchange = () => {
+  if (!nav) return;
+  if ($("navMode").value === "gps") startGps();
+  else if (gpsWatch !== null) { navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; }
+};
+
+// ---------- 시작 ----------
+function start() {
+  map = new kakao.maps.Map($("map"), { center: new kakao.maps.LatLng(37.5665, 126.978), level: 8 });
+  const box = new kakao.maps.CustomOverlay({ yAnchor: 1, zIndex: 20, clickable: true });
+  info = { setContent: h => box.setContent(h.replace('<div class="info">', '<div class="info"><span class="x" onclick="info.close()">✕</span>')),
+           setPosition: p => box.setPosition(p), open: m => box.setMap(m), close: () => box.setMap(null) };
+  if (kakao.maps.services) geocoder = new kakao.maps.services.Geocoder();
+  kakao.maps.event.addListener(map, "click", e => {                      // 지도를 누르면 출발·도착으로 고르기
+    setTimeout(() => { if (Date.now() - lastShapeClick > 400) openPick(e.latLng); }, 60);   // 격자·위험 선을 누른 거면 이유 카드만
+  });
+  $("gridBtn").onclick = $("navGrid").onclick = toggleGrid;
+  bindSearch("O"); bindSearch("D");
+  initTime();
+  // 날씨·막힘·시각을 바꾸면: 위험 지도 다시 계산 + (길안내 중이면) 가는 경로는 그대로 두고 위험 구간만 다시 계산
+  const settingsChanged = () => {
+    loadRisk();
+    if (nav) rescoreNav("change");
+    else if (place.O && place.D && routeData.length) findRoutes();
+  };
+  const timeChanged = () => {
+    const wasLive = !$("road").querySelector('option[value="실시간"]').disabled;
+    updateTimeLabel();
+    if (isNow() && !wasLive && $("road").value === "평소") $("road").value = "실시간";
+    settingsChanged();
+  };
+  $("date").onchange = $("hh").onchange = $("mm").onchange = timeChanged;
+  $("nowBtn").onclick = () => { setNow(); timeChanged(); };
+  $("weather").onchange = $("road").onchange = settingsChanged;
+  // 길안내 화면 아래쪽 바의 날씨·막힘 → 왼쪽 패널 값과 맞추고 같은 방식으로 다시 계산
+  $("navWeather").onchange = () => { $("weather").value = $("navWeather").value; settingsChanged(); };
+  $("navRoad").onchange = () => { $("road").value = $("navRoad").value; settingsChanged(); };
+  $("go").onclick = findRoutes;
+  $("mapType").onchange = () => {
+    map.setMapTypeId(kakao.maps.MapTypeId[$("mapType").value]);
+    document.body.classList.toggle("darkmap", $("mapType").value === "ROADMAP");      // 위성 사진은 밤 필터 없이
+  };   // 일반 / 위성 / 위성+도로 이름
+  updateTimeLabel();
+  loadRisk();
+  myLocation(true);                                        // 처음엔 출발지 = 내 위치 (허용했을 때)
+  // 5분마다 자동 갱신: 실시간 속도·Open-Meteo 날씨가 바뀌었을 수 있으니 위험 지도와 길안내 중인 경로를 다시 계산
+  setInterval(() => { loadRisk(); if (nav) rescoreNav("auto"); }, 5 * 60 * 1000);
+}
+
+// ---------- 길안내 중 위험도 다시 계산 ----------
+async function rescoreNav(reason) {
+  if (!nav || nav.rescoring) return;
+  nav.rescoring = true;
+  const myNav = nav;
+  try {
+    const res = await (await fetch("/api/route_rescore?" + query(), { method: "POST",
+      headers: {"Content-Type": "application/json"}, body: JSON.stringify({"선": myNav.rt["선"]}) })).json();
+    if (nav !== myNav) return;                                    // 그사이 안내가 끝났거나 새로 시작됨
+    const r = nav.r, s = nav.s;
+    const before = r.risks.filter(c => c.s > s).map(c => c.grid_id).sort().join();
+    r.risks = res["위험_칸"].map(c => ({...c, s: r.cum[nearest(r.pts, c["위도"], c["경도"]).i]})).sort((a, b) => a.s - b.s);
+    const ahead = r.risks.filter(c => c.s > s);
+    // 지도 위 ⚠ 표시도 새 위험 구간으로
+    cellMarkers.forEach(m => m.setMap(null)); cellMarkers = [];
+    r.risks.forEach(c => cellMarkers.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(c["위도"], c["경도"]),
+      content: `<div title="${(c["이유"] || []).join(" / ")}" style="font-size:16px">⚠️</div>` })));
+    nav.rt["등급"] = res["등급"];
+    nav.rt["위험_구간"] = res["위험_구간"] || [];
+    nav.rt["보통_칸"] = res["보통_칸"] || []; nav.rt["위험_칸"] = res["위험_칸"] || [];
+    buildRisk(r, nav.rt); nav.lastWhy = null;
+    if (selIdx === nav.i) drawSegs(nav.i);
+    drawDriveRisks(r);                                            // 왼쪽 운전자 시점의 빨간 칸도 새로
+    if (ahead.map(c => c.grid_id).sort().join() !== before) {     // 앞으로 지날 위험 구간이 달라졌을 때만 알림
+      const why = reason === "auto" ? "도로 상황이 바뀌어서" : "바꾼 조건으로";
+      say(`${why} 위험 구간을 다시 계산했어요. 앞으로 사고 위험이 높은 구간은 ${ahead.length}곳이에요.`);
+      const bar = $("riskBar"); bar.className = "보통"; bar.style.display = "block";
+      bar.textContent = `🔄 위험 구간 다시 계산 · 남은 길의 위험 높은 구간 ${ahead.length}곳 · 경로 위험 ${res["등급"]}`;
+    }
+  } catch (e) { console.warn("위험도 다시 계산 실패", e); }
+  finally { myNav.rescoring = false; }
+}
+if (HAS_KEY) kakao.maps.load(start);
+else $("map").innerHTML = `<div id="nokey"><b>카카오 지도 키(KAKAO_JS_KEY)가 없어요.</b><br>
+  1) 카카오 디벨로퍼스 → 내 앱 → 플랫폼 키 → <b>JavaScript 키</b> 복사<br>
+  2) 같은 화면에서 <b>JavaScript SDK 도메인</b>에 <code>http://localhost:5000</code> 등록<br>
+  3) road-risk-layer/.env 에 <code>KAKAO_JS_KEY=복사한키</code> 추가 후 서버 다시 실행</div>`;
+</script>
+</body>
+</html>

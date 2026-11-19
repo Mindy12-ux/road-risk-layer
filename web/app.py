@@ -31,7 +31,9 @@ API (화면이 부르는 주소)
   공공데이터포털 전국어린이보호구역표준데이터 서울 1,601곳)
 """
 import datetime as dt
+import math
 import os
+import re
 import sys
 import threading
 import time
@@ -89,6 +91,7 @@ rr = RouteRisk()
 # ---- 길안내용: 카카오 응답의 안내 지점(guides)도 같이 받기 (팀 코드는 그대로 두고 감쌈) ----
 _local = threading.local()
 KAKAO_URL = "https://apis-navi.kakaomobility.com/v1/directions"
+KAKAO_FUTURE_URL = "https://apis-navi.kakaomobility.com/v1/future/directions"   # 미래 운행 정보 길찾기 (출발 시각 기준 예상 교통)
 KAKAO_ROUTE_KEY = read_env("KAKAO_REST_KEY")
 
 
@@ -98,17 +101,25 @@ def _kakao_with_guides(origin, dest, priority, alternatives, waypoint=None):
               "priority": priority, "alternatives": str(alternatives).lower(), "summary": "false"}
     if waypoint:
         params["waypoints"] = f"{waypoint[0]},{waypoint[1]}"
-    r = requests.get(KAKAO_URL, params=params, headers={"Authorization": f"KakaoAK {KAKAO_ROUTE_KEY}"}, timeout=10)
+    depart = getattr(_local, "depart", None)          # 미래 출발이면 그 시각의 예상 교통으로 경로·시간을 받음
+    url = KAKAO_FUTURE_URL if depart else KAKAO_URL
+    if depart:
+        params["departure_time"] = depart             # yyyyMMddHHmm
+    r = requests.get(url, params=params, headers={"Authorization": f"KakaoAK {KAKAO_ROUTE_KEY}"}, timeout=10)
     r.raise_for_status()
     out = []
     for k, route in enumerate(r.json().get("routes", [])):
         if route.get("result_code") != 0:
             continue
-        line, guides = [], []
+        line, guides, names = [], [], {}
         for sec in route["sections"]:
             for road in sec["roads"]:
                 v = road["vertexes"]
                 line += list(zip(v[0::2], v[1::2]))
+                for x, y in zip(v[0::2], v[1::2]):          # 칸마다 경로가 지나는 도로 이름 세기 (고속·고가 구간 판단용)
+                    c = _gid(y, x)
+                    names.setdefault(c, {}).setdefault(road.get("name", ""), 0)
+                    names[c][road.get("name", "")] += 1
             for g in sec.get("guides", []):
                 guides.append({"x": g["x"], "y": g["y"], "type": g["type"], "안내": g["guidance"],
                                "이름": g.get("name", "")})
@@ -116,7 +127,8 @@ def _kakao_with_guides(origin, dest, priority, alternatives, waypoint=None):
         out.append({"이름": name if k == 0 else f"{name} 대안 {k}",
                     "거리_km": round(route["summary"]["distance"] / 1000, 1),
                     "시간_분": round(route["summary"]["duration"] / 60),
-                    "선": line, "안내": guides})
+                    "선": line, "안내": guides,
+                    "칸_도로명": {c: max(n, key=n.get) for c, n in names.items()}})
     return out
 
 
@@ -319,6 +331,70 @@ def zones_on_route(line_latlng):
 _cache, _lock = {}, threading.Lock()
 
 
+# ---- 이유 문장 다듬기 + 경로 위 위험 구간 ----
+
+
+def fix_reason(t):
+    """화면·음성에 보여 줄 이유 문장을 팀 요청대로 바꿈 (모델 규칙 파일은 그대로 둠)
+    - 'n시 무렵에 사고가 잦은 곳이에요' → 'n시 무렵에 사고가 많은 곳이에요'
+    - '지금 사람이 많은 곳이에요 (생활인구 약 N명)' → '유동인구가 많은 곳이에요'"""
+    t = re.sub(r"(\d+)시 무렵에 사고가 잦은 곳이에요", r"\1시 무렵에 사고가 많은 곳이에요", t)
+    if "사람이 많은 곳" in t:
+        return ("[오늘] " if t.startswith("[오늘]") else "") + "유동인구가 많은 곳이에요"
+    return t
+
+
+def fix_reasons(lst):
+    return [fix_reason(x) for x in (lst or [])]
+
+
+def _gid(lat, lng):
+    x, y = LL_TO_5179.transform(lng, lat)
+    return f"{int(x // 500)}_{int(y // 500)}"
+
+
+# 고속도로·도시고속도로·고가: 여기서는 '유동인구' 이유를 말하지 않음 (걷는 사람이 없는 길)
+FAST_ROAD = re.compile(r"고속|고가|올림픽대로|강변북로|순환로|간선도로|분당수서|자동차전용|나들목|분기점|IC|JC")
+
+
+def fast_cells(cell_names):
+    return sorted(c for c, n in (cell_names or {}).items() if n and FAST_ROAD.search(n))
+
+
+def mid_cells(grade_of, pred, fast=()):
+    """경로 위 '보통' 칸 + 이유 (노란 구간 경고용)"""
+    return [{"grid_id": c, "등급": "보통", "이유": pred[c]["이유"] + pred[c]["오늘"], "도로": ROAD.get(c, ""),
+             "위도": CENTER[c]["중심_위도"], "경도": CENTER[c]["중심_경도"]}
+            for c, g in grade_of.items() if g == "보통" and c in pred]
+
+
+def risk_segments(line, grade_of, step_m=30):
+    """경로 선을 30m 간격으로 잘게 나눠 칸 등급을 보고, 높음·보통이 이어지는 부분만 선 조각으로 돌려줌
+    → 지도에서 500m 네모 대신 '도로 위 색 선'으로 위험을 보여 주려고"""
+    pts = []
+    for (a, b) in zip(line[:-1], line[1:]):
+        d = math.hypot((b[0] - a[0]) * 111000, (b[1] - a[1]) * 88000)
+        n = max(1, int(d // step_m))
+        for k in range(n):
+            t = k / n
+            pts.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+    if line:
+        pts.append(tuple(line[-1]))
+    segs, cur = [], None
+    for la, ln in pts:
+        gid = _gid(la, ln)
+        g = grade_of.get(gid, "낮음")
+        if cur and cur["등급"] == g and cur["grid_id"] == gid:
+            cur["선"].append([la, ln])
+            continue
+        if cur:
+            cur["선"].append([la, ln])          # 다음 조각과 끊기지 않게 이어 붙임
+        cur = {"등급": g, "grid_id": gid, "선": [[la, ln]]} if g != "낮음" else None
+        if cur:
+            segs.append(cur)
+    return [x for x in segs if len(x["선"]) > 1]
+
+
 def params():
     """화면에서 온 시각·날씨·도로상황 → (when, weather, road, 실시간속도를쓰나)
 
@@ -349,6 +425,8 @@ def city_predict(when, weather, road, now):
     ratio = sn.ratios() if now else None
     X = fm.make(when=None if now else when, weather=weather, road_state=None if now else road, speed_ratio=ratio)
     pred = dict(zip(X["grid_id"], rm.predict(X)))
+    for p in pred.values():
+        p["이유"], p["오늘"] = fix_reasons(p["이유"]), fix_reasons(p["오늘"])
     meta = {"시각": str(hour), "날씨_출처": fm.weather_source,
             "속도_출처": f"실시간 속도 ({sn.last})" if now else f"막힘 정도 직접 선택: {road}"}
     with _lock:
@@ -357,8 +435,18 @@ def city_predict(when, weather, road, now):
 
 
 @app.route("/")
+def landing():
+    return render_template("landing.html")
+
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
+@app.route("/app")
 def index():
-    return render_template("index.html", kakao_js_key=KAKAO_JS, notice=NOTICE)
+    return render_template("app.html", kakao_js_key=KAKAO_JS, notice=NOTICE)
 
 
 @app.route("/api/grid")
@@ -400,14 +488,33 @@ def routes():
     d = tuple(map(float, request.args["d"].split(",")))
     when, weather, road, now = params()
     _local.found = []
-    res = rr.routes(o, d, when=when, weather=weather, road_state=road)   # when=None 이면 실시간 속도
+    _local.depart = None
+    dep = request.args.get("depart")                  # 화면에서 고른 출발 시각 (5분 단위)
+    if dep:
+        t = pd.Timestamp(dep)
+        if t > pd.Timestamp(dt.datetime.now()) + pd.Timedelta(minutes=5):
+            _local.depart = t.strftime("%Y%m%d%H%M")
+    pred, _ = city_predict(when, weather, road, now)          # '보통' 칸 이유를 꺼내 쓰려고 (5분 저장값)
+    try:
+        res = rr.routes(o, d, when=when, weather=weather, road_state=road)   # when=None 이면 실시간 속도
+    finally:
+        depart, _local.depart = _local.depart, None
+    res["길찾기_기준"] = (f"카카오 미래 길찾기 · {pd.Timestamp(depart).strftime('%m/%d %H:%M')} 출발 예상 교통"
+                     if depart else "카카오 실시간 길찾기 · 지금 교통")
     for r, f in zip(res["경로"], getattr(_local, "found", [])):            # routes() 는 찾은 순서 그대로 돌려줌
         r["안내"] = f.get("안내", [])
+        r["고속_칸"] = fast_cells(f.get("칸_도로명"))
     for r in res["경로"]:
         r["카메라"] = cameras_on_route(r["선"])
         r["보호구역"] = zones_on_route(r["선"])
         r["칸_제한속도"] = route_limits(r["선"])
         r["도로_제한속도"] = road_limits(r["선"])
+        r["위험_구간"] = risk_segments(r["선"], r.get("칸_등급", {}))
+        r["보통_칸"] = mid_cells(r.get("칸_등급", {}), pred)
+        for c in r["보통_칸"]:
+            c["이유"] = fix_reasons(c["이유"])
+        for c in r["위험_칸"]:
+            c["이유"] = fix_reasons(c.get("이유"))
     if res["경로"]:                               # 높음 비율이 가장 낮은 경로 = 가장 안전한 경로
         best = min(range(len(res["경로"])), key=lambda i: (res["경로"][i]["높음_비율"], res["경로"][i]["보통이상_비율"]))
         for i, r in enumerate(res["경로"]):
@@ -430,7 +537,8 @@ def route_rescore():
     risky = [{"grid_id": c, "등급": "높음", "이유": pred[c]["이유"] + pred[c]["오늘"], "도로": ROAD.get(c, ""),
               "위도": CENTER[c]["중심_위도"], "경도": CENTER[c]["중심_경도"]}
              for c in dist if grade.get(c) == "높음"]
-    return jsonify({"등급": level, "높음_비율": high, "보통이상_비율": mid_up, "위험_칸": risky, **meta})
+    return jsonify({"등급": level, "높음_비율": high, "보통이상_비율": mid_up, "위험_칸": risky,
+                    "위험_구간": risk_segments(line, grade), "보통_칸": mid_cells(grade, pred), **meta})
 
 
 @app.route("/api/search")
