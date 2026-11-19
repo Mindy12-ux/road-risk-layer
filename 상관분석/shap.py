@@ -7,7 +7,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/SHAP/shap_values.py
 
-입력: data/model_input/train.csv (학습), valid.csv (SHAP 계산), info.json
+입력: model/results/model_input/train.csv (학습), valid.csv (SHAP 계산), info.json
 출력: reports/SHAP/
         SHAP_중요도.csv                 변수별 평균 영향 크기, 위험을 올린 줄 비율
         SHAP_방향.csv                   숫자 변수: 값이 클수록 위험 ↑/↓
@@ -35,11 +35,12 @@ import pandas as pd
 from scipy.stats import spearmanr
 from sklearn.metrics import average_precision_score
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/SHAP"
 os.makedirs(OUT_DIR, exist_ok=True)
 

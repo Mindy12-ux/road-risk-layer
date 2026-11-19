@@ -6,7 +6,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/importance/feature_set.py
 
-입력: data/model_input/train.csv (학습), valid.csv (채점), info.json   (기상·노면 Open-Meteo 통일 후)
+입력: model/results/model_input/train.csv (학습), valid.csv (채점), info.json   (기상·노면 Open-Meteo 통일 후)
 출력: reports/feature_set/
         세트별_점수.csv
         세트별_변수.csv                 세트마다 어떤 변수가 들어갔는지 (O 표시)
@@ -36,11 +36,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, log_loss, roc_auc_score
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/feature_set"
 os.makedirs(OUT_DIR, exist_ok=True)
 

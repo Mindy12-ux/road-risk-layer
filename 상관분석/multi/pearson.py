@@ -6,7 +6,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/multi/pearson.py
 
-입력: data/model_input/train.csv, info.json   (train만 사용)
+입력: model/results/model_input/train.csv, info.json   (train만 사용)
 출력: reports/multi_pearson/
         피어슨_행렬.csv               모든 짝의 r
         피어슨_높은짝.csv             |r| ≥ 0.5인 짝 목록 (큰 순서)
@@ -26,11 +26,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/multi_pearson"
 os.makedirs(OUT_DIR, exist_ok=True)
 

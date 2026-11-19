@@ -7,7 +7,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/feat/drop_test.py
 
-입력: data/model_input/train.csv (학습), valid.csv (채점), info.json
+입력: model/results/model_input/train.csv (학습), valid.csv (채점), info.json
 출력: reports/drop_test/
         drop_test_결과.csv
         01_drop_PR-AUC변화.png        실험별 PR-AUC 변화 (기준 28개 대비)
@@ -33,11 +33,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, log_loss, roc_auc_score
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/drop_test"
 os.makedirs(OUT_DIR, exist_ok=True)
 

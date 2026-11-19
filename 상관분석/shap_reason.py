@@ -11,7 +11,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/SHAP/shap_reason.py
 
-입력: data/model_input/train.csv (학습), valid.csv (이유 계산), info.json
+입력: model/results/model_input/train.csv (학습), valid.csv (이유 계산), info.json
 출력: reports/SHAP_reason/
         이유_예시_위험상위.csv          위험 확률 가장 높은 20줄 + 이유 3개 + 오늘 상황
         이유_예시_비오는날.csv          비 오는 날 줄 중 위험 상위 20줄 + 이유 3개 + 오늘 상황
@@ -42,11 +42,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score
 
-plt.rcParams["font.family"] = "AppleGothic"
+import platform
+plt.rcParams["font.family"] = {"Windows": "Malgun Gothic", "Darwin": "AppleGothic"}.get(platform.system(), "NanumGothic")
 plt.rcParams["axes.unicode_minus"] = False
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 OUT_DIR = f"{ROOT}/reports/SHAP_reason"
 os.makedirs(OUT_DIR, exist_ok=True)
 

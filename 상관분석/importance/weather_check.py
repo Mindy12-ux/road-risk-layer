@@ -8,7 +8,7 @@
 사용법 (ML project 폴더에서):
     python 상관분석/feat/weather_check.py
 
-입력: data/model_input/train.csv, valid.csv, info.json, data/raw/weather/seoul_hourly_openmeteo.json
+입력: model/results/model_input/train.csv, valid.csv, info.json, data/raw/weather/seoul_hourly_openmeteo.json
 출력: 화면 출력만 (파일 저장 없음)
 
 점검 순서:
@@ -25,14 +25,15 @@
 """
 
 import json
+import os
 
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score
 
-ROOT = "/Users/woojin/ML project"
-DATA_DIR = f"{ROOT}/data/model_input"
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # 저장소 맨 위 폴더
+DATA_DIR = f"{ROOT}/model/results/model_input"   # dvc pull로 받은 데이터
 WEATHER_PATH = f"{ROOT}/data/raw/weather/seoul_hourly_openmeteo.json"
 
 DROP = ["주말", "칸_과거차대차비율", "도로_큰분류"]     # 2단계(다중공선성)에서 정리한 변수
