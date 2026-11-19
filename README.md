@@ -9,3 +9,12 @@
 git pull && dvc pull                 # 최신 데이터 받기
 python scripts/merge.py sun pop      # 기준 데이터셋 + 고른 변수 → data/merged/
 ```
+
+## 상관관계 · 모델 학습
+```
+python scripts/merge.py sun zone road_link road_speed pop --keep-keys
+python scripts/make_model_data.py    # → data/model/ (연도별 분할, dataset_v2 규칙)
+python model/check_correlation.py    # → results/corr/
+python model/train_two_stage.py      # → results/model/ (2단계 LightGBM)
+```
+자세한 설명은 [docs/DATA_GUIDE.md](docs/DATA_GUIDE.md) 4장.
